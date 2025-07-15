@@ -56,17 +56,9 @@
           {
             "group": "Zap",
             "pages": [
-              "sdk/zap/get-quotes",
+              "sdk/zap/request-quotes",
               "sdk/zap/execute-zap",
               "sdk/zap/status-tracking"
-            ]
-          },
-          {
-            "group": "Tokens",
-            "pages": [
-              "sdk/tokens/get-tokens",
-              "sdk/tokens/token-balances", 
-              "sdk/tokens/token-prices"
             ]
           },
           {
