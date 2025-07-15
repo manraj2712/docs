@@ -1,0 +1,1422 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "DZap Backend API",
+    "version": "1.0.0",
+    "description": "DZap is a swap and bridge aggregator that provides a unified API for fetching quotes and building transactions across multiple chains and providers.\n"
+  },
+  "servers": [
+    {
+      "url": "https://api.dzap.io/v1",
+      "description": "Production Server"
+    }
+  ],
+  "paths": {
+    "/config/providers": {
+      "get": {
+        "tags": ["Config"],
+        "summary": "Fetch supported providers",
+        "description": "Fetches the list of supported providers.\n",
+        "operationId": "fetchSupportedProviders",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "service",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["swap", "bridge"]
+            },
+            "example": "swap",
+            "description": "Optional query parameter to specify the service type. \nCan be either 'swap' or 'bridge'.\n"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response with a list of supported providers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "icon": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "icon": "https://uniswap.org/favicon.ico",
+                    "name": "Uniswap",
+                    "id": "uniSwap"
+                  },
+                  {
+                    "icon": "https://paraSwap.com/favicon.ico",
+                    "name": "Paraswap",
+                    "id": "paraSwap"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/quotes": {
+      "post": {
+        "tags": ["Quotes"],
+        "summary": "Get quotes for swap or bridge",
+        "description": "Fetches quotes for swap and bridge. Returns quote rates from multiple providers with pricing, fees, and route information.",
+        "operationId": "fetchQuotes",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["fromChain", "integratorId", "data"],
+                "properties": {
+                  "account": {
+                    "type": "string",
+                    "format": "address",
+                    "example": "0x99BCEBf44433E901597D9fCb16E799a4847519f6",
+                    "description": "Optional user wallet address for account-specific quotes"
+                  },
+                  "fromChain": {
+                    "type": "integer",
+                    "example": 42161,
+                    "description": "Source chain ID where the swap originates"
+                  },
+                  "integratorId": {
+                    "type": "string",
+                    "example": "dzap",
+                    "description": "Integrator identifier used to identify the calling application"
+                  },
+                  "allowedSources": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [],
+                    "description": "Optional array of allowed provider sources to filter quotes"
+                  },
+                  "data": {
+                    "type": "array",
+                    "description": "Array of quote request details for each token pair to be swapped",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "amount",
+                        "srcToken",
+                        "srcDecimals",
+                        "destToken",
+                        "destDecimals",
+                        "slippage",
+                        "toChain"
+                      ],
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "example": "332999",
+                          "description": "Amount of source token to be swapped (in wei/smallest unit)"
+                        },
+                        "srcToken": {
+                          "type": "string",
+                          "format": "address",
+                          "example": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+                          "description": "Source token contract address"
+                        },
+                        "srcDecimals": {
+                          "type": "integer",
+                          "example": 6,
+                          "description": "Number of decimals for the source token"
+                        },
+                        "destToken": {
+                          "type": "string",
+                          "format": "address",
+                          "example": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+                          "description": "Destination token contract address"
+                        },
+                        "destDecimals": {
+                          "type": "integer",
+                          "example": 6,
+                          "description": "Number of decimals for the destination token"
+                        },
+                        "slippage": {
+                          "type": "number",
+                          "format": "float",
+                          "example": 0.9,
+                          "description": "Slippage tolerance percentage (0-100)"
+                        },
+                        "toChain": {
+                          "type": "integer",
+                          "example": 137,
+                          "description": "Destination chain ID where tokens will be received"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response with quotes from multiple providers with pricing, fees, and route information.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pair": {
+                      "type": "object",
+                      "properties": {
+                        "recommendedSource": {
+                          "type": "string",
+                          "example": "stargate"
+                        },
+                        "quoteRates": {
+                          "type": "object",
+                          "properties": {
+                            "providerId": {
+                              "type": "object",
+                              "properties": {
+                                "srcAmount": {
+                                  "type": "string",
+                                  "example": "1000000000"
+                                },
+                                "srcAmountUSD": {
+                                  "type": "string",
+                                  "example": "1003"
+                                },
+                                "destAmount": {
+                                  "type": "string",
+                                  "example": "999989999"
+                                },
+                                "destAmountUSD": {
+                                  "type": "string",
+                                  "example": "1001.989978998"
+                                },
+                                "minDestAmount": {
+                                  "type": "string",
+                                  "example": "999989999"
+                                },
+                                "swapPerUnit": {
+                                  "type": "string",
+                                  "example": "0.999989999"
+                                },
+                                "duration": {
+                                  "type": "string",
+                                  "example": "60"
+                                },
+                                "providerDetails": {
+                                  "type": "object",
+                                  "properties": {
+                                    "icon": {
+                                      "type": "string",
+                                      "example": "https://stargate.finance/static/logo-mobile.svg"
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "example": "Stargate V2"
+                                    }
+                                  }
+                                },
+                                "srcToken": {
+                                  "type": "object",
+                                  "properties": {
+                                    "address": {
+                                      "type": "string",
+                                      "example": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9"
+                                    },
+                                    "chainId": {
+                                      "type": "integer",
+                                      "example": 42161
+                                    },
+                                    "decimals": {
+                                      "type": "integer",
+                                      "example": 6
+                                    },
+                                    "symbol": {
+                                      "type": "string",
+                                      "example": "USDT"
+                                    },
+                                    "logo": {
+                                      "type": "string",
+                                      "example": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png"
+                                    }
+                                  }
+                                },
+                                "destToken": {
+                                  "type": "object",
+                                  "properties": {
+                                    "address": {
+                                      "type": "string",
+                                      "example": "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58"
+                                    },
+                                    "chainId": {
+                                      "type": "integer",
+                                      "example": 10
+                                    },
+                                    "decimals": {
+                                      "type": "integer",
+                                      "example": 6
+                                    },
+                                    "symbol": {
+                                      "type": "string",
+                                      "example": "USDT"
+                                    },
+                                    "logo": {
+                                      "type": "string",
+                                      "example": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png"
+                                    }
+                                  }
+                                },
+                                "fee": {
+                                  "type": "object",
+                                  "properties": {
+                                    "gasFee": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object"
+                                      }
+                                    },
+                                    "providerFee": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "address": {
+                                            "type": "string",
+                                            "example": "0x0000000000000000000000000000000000000000"
+                                          },
+                                          "amount": {
+                                            "type": "string",
+                                            "example": "18935672179879"
+                                          },
+                                          "amountUSD": {
+                                            "type": "string",
+                                            "example": "0.0497288622787982298"
+                                          },
+                                          "chainId": {
+                                            "type": "integer",
+                                            "example": 42161
+                                          },
+                                          "decimals": {
+                                            "type": "integer",
+                                            "example": 18
+                                          },
+                                          "included": {
+                                            "type": "boolean",
+                                            "example": true
+                                          },
+                                          "symbol": {
+                                            "type": "string",
+                                            "example": "ETH"
+                                          },
+                                          "logo": {
+                                            "type": "string",
+                                            "example": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "protocolFee": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "address": {
+                                            "type": "string",
+                                            "example": "0x0000000000000000000000000000000000000000"
+                                          },
+                                          "amount": {
+                                            "type": "string",
+                                            "example": "40000000000000"
+                                          },
+                                          "amountUSD": {
+                                            "type": "string",
+                                            "example": "0.105048"
+                                          },
+                                          "chainId": {
+                                            "type": "integer",
+                                            "example": 42161
+                                          },
+                                          "symbol": {
+                                            "type": "string",
+                                            "example": "ETH"
+                                          },
+                                          "logo": {
+                                            "type": "string",
+                                            "example": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+                                          },
+                                          "decimals": {
+                                            "type": "integer",
+                                            "example": 18
+                                          },
+                                          "included": {
+                                            "type": "boolean",
+                                            "example": false
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "steps": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "exchange": {
+                                        "type": "object",
+                                        "properties": {
+                                          "icon": {
+                                            "type": "string",
+                                            "example": "https://stargate.finance/static/logo-mobile.svg"
+                                          },
+                                          "name": {
+                                            "type": "string",
+                                            "example": "Stargate V2"
+                                          }
+                                        }
+                                      },
+                                      "type": {
+                                        "type": "string",
+                                        "example": "bridge"
+                                      }
+                                    }
+                                  }
+                                },
+                                "path": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "exchange": {
+                                        "type": "object",
+                                        "properties": {
+                                          "icon": {
+                                            "type": "string",
+                                            "example": "https://stargate.finance/static/logo-mobile.svg"
+                                          },
+                                          "name": {
+                                            "type": "string",
+                                            "example": "Stargate V2"
+                                          }
+                                        }
+                                      },
+                                      "srcToken": {
+                                        "type": "object",
+                                        "properties": {
+                                          "address": {
+                                            "type": "string",
+                                            "example": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9"
+                                          },
+                                          "chainId": {
+                                            "type": "integer",
+                                            "example": 42161
+                                          },
+                                          "decimals": {
+                                            "type": "integer",
+                                            "example": 6
+                                          },
+                                          "symbol": {
+                                            "type": "string",
+                                            "example": "USDT"
+                                          },
+                                          "logo": {
+                                            "type": "string",
+                                            "example": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png"
+                                          }
+                                        }
+                                      },
+                                      "srcAmount": {
+                                        "type": "string",
+                                        "example": "1000000000"
+                                      },
+                                      "srcAmountUSD": {
+                                        "type": "string",
+                                        "example": "1003.00000"
+                                      },
+                                      "destToken": {
+                                        "type": "object",
+                                        "properties": {
+                                          "address": {
+                                            "type": "string",
+                                            "example": "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58"
+                                          },
+                                          "chainId": {
+                                            "type": "integer",
+                                            "example": 10
+                                          },
+                                          "decimals": {
+                                            "type": "integer",
+                                            "example": 6
+                                          },
+                                          "symbol": {
+                                            "type": "string",
+                                            "example": "USDT"
+                                          },
+                                          "logo": {
+                                            "type": "string",
+                                            "example": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png"
+                                          }
+                                        }
+                                      },
+                                      "destAmount": {
+                                        "type": "string",
+                                        "example": "999989999"
+                                      },
+                                      "destAmountUSD": {
+                                        "type": "string",
+                                        "example": "1001.98998"
+                                      },
+                                      "fee": {
+                                        "type": "object",
+                                        "properties": {
+                                          "gasFee": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object"
+                                            }
+                                          },
+                                          "providerFee": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "address": {
+                                                  "type": "string",
+                                                  "example": "0x0000000000000000000000000000000000000000"
+                                                },
+                                                "amount": {
+                                                  "type": "string",
+                                                  "example": "18935672179879"
+                                                },
+                                                "amountUSD": {
+                                                  "type": "string",
+                                                  "example": "0.0497288622787982298"
+                                                },
+                                                "chainId": {
+                                                  "type": "integer",
+                                                  "example": 42161
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "example": 18
+                                                },
+                                                "included": {
+                                                  "type": "boolean",
+                                                  "example": true
+                                                },
+                                                "symbol": {
+                                                  "type": "string",
+                                                  "example": "ETH"
+                                                },
+                                                "logo": {
+                                                  "type": "string",
+                                                  "example": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "protocolFee": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "address": {
+                                                  "type": "string",
+                                                  "example": "0x0000000000000000000000000000000000000000"
+                                                },
+                                                "amount": {
+                                                  "type": "string",
+                                                  "example": "40000000000000"
+                                                },
+                                                "amountUSD": {
+                                                  "type": "string",
+                                                  "example": "0.105048"
+                                                },
+                                                "chainId": {
+                                                  "type": "integer",
+                                                  "example": 42161
+                                                },
+                                                "symbol": {
+                                                  "type": "string",
+                                                  "example": "ETH"
+                                                },
+                                                "logo": {
+                                                  "type": "string",
+                                                  "example": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "example": 18
+                                                },
+                                                "included": {
+                                                  "type": "boolean",
+                                                  "example": false
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "type": {
+                                        "type": "string",
+                                        "example": "bridge"
+                                      }
+                                    }
+                                  }
+                                },
+                                "priceImpactPercent": {
+                                  "type": "string",
+                                  "example": "-0.10"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "0xaf88d065e77c8cC2239327C5EDb3A432268e5831-0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8": {
+                    "status": "success",
+                    "recommendedSource": "relayLink",
+                    "recommendedSourceByAmount": "paraSwap",
+                    "recommendedSourceByGas": "relayLink",
+                    "tokensWithoutPrice": [],
+                    "quoteRates": {
+                      "relayLink": {
+                        "data": {
+                          "srcToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+                          "srcAmount": "257827",
+                          "destToken": "0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8",
+                          "destAmount": "75551963618749",
+                          "fee": {
+                            "gasFee": [
+                              {
+                                "address": "0x0000000000000000000000000000000000000000",
+                                "amount": "242000000000",
+                                "amountUSD": "0.00072350982",
+                                "chainId": 42161,
+                                "symbol": "ETH",
+                                "logo": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png",
+                                "decimals": 18,
+                                "included": false
+                              }
+                            ],
+                            "protocolFee": [],
+                            "providerFee": []
+                          },
+                          "priceImpactPercent": "-0.14",
+                          "swapPerUnit": "0.00029",
+                          "srcAmountUSD": "0.257778528524",
+                          "destAmountUSD": "0.25741233972580353041",
+                          "providerDetails": {
+                            "id": "relayLink",
+                            "icon": "https://relay.link/favicon.ico",
+                            "name": "RelayLink"
+                          }
+                        }
+                      },
+                      "paraSwap": {
+                        "data": {
+                          "srcToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+                          "srcAmount": "257827",
+                          "destToken": "0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8",
+                          "destAmount": "76275707175364",
+                          "fee": {
+                            "gasFee": [
+                              {
+                                "address": "0x0000000000000000000000000000000000000000",
+                                "amount": "2587400000000",
+                                "amountUSD": "0.007735575654",
+                                "chainId": 42161,
+                                "symbol": "ETH",
+                                "logo": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png",
+                                "decimals": 18,
+                                "included": false
+                              }
+                            ],
+                            "protocolFee": [],
+                            "providerFee": []
+                          },
+                          "priceImpactPercent": "0.81",
+                          "swapPerUnit": "0.00030",
+                          "srcAmountUSD": "0.257778528524",
+                          "destAmountUSD": "0.25987819916011093076",
+                          "providerDetails": {
+                            "id": "paraSwap",
+                            "icon": "https://assets-global.website-files.com/617aa5e4225be2555942852c/62346c8ea897417281669ec1_favicon.png",
+                            "name": "ParaSwap"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/buildTx": {
+      "post": {
+        "tags": ["Build Transaction"],
+        "summary": "Build a transaction for swap or bridge",
+        "description": "Builds executable transaction data for cross-chain trades and swaps. Returns transaction calldata, gas estimates, and execution parameters.",
+        "operationId": "buildTransaction",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fromChain",
+                  "account",
+                  "refundee",
+                  "integratorId",
+                  "data"
+                ],
+                "properties": {
+                  "fromChain": {
+                    "type": "integer",
+                    "example": 42161,
+                    "description": "Source chain ID where the transaction will be executed"
+                  },
+                  "integratorId": {
+                    "type": "string",
+                    "example": "dzap",
+                    "description": "Integrator identifier used to identify the calling application"
+                  },
+                  "sender": {
+                    "type": "string",
+                    "format": "address",
+                    "example": "0x99BCEBf44433E901597D9fCb16E799a4847519f6",
+                    "description": "User's wallet address that will send the transaction"
+                  },
+                  "refundee": {
+                    "type": "string",
+                    "format": "address",
+                    "example": "0x99BCEBf44433E901597D9fCb16E799a4847519f6",
+                    "description": "Address to receive refunds in case of failed transactions"
+                  },
+                  "disableEstimation": {
+                    "type": "boolean",
+                    "example": false,
+                    "description": "Whether to disable gas estimation and simulation for the transaction"
+                  },
+                  "data": {
+                    "type": "array",
+                    "description": "Array of transaction build details for each token pair to be swapped",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "amount",
+                        "srcToken",
+                        "srcDecimals",
+                        "destToken",
+                        "destDecimals",
+                        "slippage",
+                        "selectedRoute",
+                        "toChain",
+                        "recipient"
+                      ],
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "example": "332999",
+                          "description": "Amount of source token to be swapped (in smallest unit)"
+                        },
+                        "srcToken": {
+                          "type": "string",
+                          "format": "address",
+                          "example": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+                          "description": "Source token contract address"
+                        },
+                        "srcDecimals": {
+                          "type": "integer",
+                          "example": 6,
+                          "description": "Number of decimals for the source token"
+                        },
+                        "destToken": {
+                          "type": "string",
+                          "format": "address",
+                          "example": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+                          "description": "Destination token contract address"
+                        },
+                        "destDecimals": {
+                          "type": "integer",
+                          "example": 6,
+                          "description": "Number of decimals for the destination token"
+                        },
+                        "slippage": {
+                          "type": "number",
+                          "format": "float",
+                          "example": 0.9,
+                          "description": "Slippage tolerance percentage (0-100)"
+                        },
+                        "selectedRoute": {
+                          "type": "string",
+                          "example": "router",
+                          "description": "Selected route/provider identifier from the quotes response"
+                        },
+                        "recipient": {
+                          "type": "string",
+                          "format": "address",
+                          "example": "0x99BCEBf44433E901597D9fCb16E799a4847519f6",
+                          "description": "Address that will receive the destination tokens"
+                        },
+                        "toChain": {
+                          "type": "integer",
+                          "example": 137,
+                          "description": "Destination chain ID where tokens will be received"
+                        },
+                        "additionalInfo": {
+                          "type": "object",
+                          "example": {},
+                          "description": "Additional provider-specific information from quotes response"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response with transaction data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "string",
+                      "description": "Encoded call data"
+                    },
+                    "to": {
+                      "type": "string",
+                      "format": "address",
+                      "example": "0xF708e11A7C94abdE8f6217B13e6fE39C8b9cC0a6"
+                    },
+                    "from": {
+                      "type": "string",
+                      "format": "address",
+                      "example": "0x99BCEBf44433E901597D9fCb16E799a4847519f6"
+                    },
+                    "chainId": {
+                      "type": "integer",
+                      "example": 42161
+                    },
+                    "value": {
+                      "type": "string",
+                      "example": "0"
+                    },
+                    "gasLimit": {
+                      "type": "string",
+                      "example": "982242"
+                    },
+                    "additionalInfo": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "example": {}
+                    }
+                  }
+                },
+                "example": {
+                  "status": "success",
+                  "data": "0x000000....",
+                  "to": "0xF708e11A7C94abdE8f6217B13e6fE39C8b9cC0a6",
+                  "from": "0x99BCEBf44433E901597D9fCb16E799a4847519f6",
+                  "chainId": 42161,
+                  "value": "0",
+                  "gasLimit": "982242",
+                  "additionalInfo": {}
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "417": {
+            "description": "Bad Request - Unable to initiate swap",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "errMsg": {
+                          "type": "string"
+                        },
+                        "error": {
+                          "type": "object",
+                          "properties": {
+                            "reason": {
+                              "type": "string"
+                            },
+                            "code": {
+                              "type": "string"
+                            },
+                            "method": {
+                              "type": "string"
+                            },
+                            "transaction": {
+                              "type": "object",
+                              "properties": {
+                                "from": {
+                                  "type": "string",
+                                  "format": "address"
+                                },
+                                "to": {
+                                  "type": "string",
+                                  "format": "address"
+                                },
+                                "value": {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string"
+                                    },
+                                    "hex": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "data": {
+                                  "type": "string"
+                                },
+                                "error": {
+                                  "type": "object",
+                                  "properties": {
+                                    "reason": {
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "body": {
+                                      "type": "string"
+                                    },
+                                    "requestMethod": {
+                                      "type": "string"
+                                    },
+                                    "url": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "request": {
+                              "type": "object",
+                              "properties": {
+                                "chainId": {
+                                  "type": "integer",
+                                  "format": "int64"
+                                },
+                                "recipient": {
+                                  "type": "string",
+                                  "format": "address"
+                                },
+                                "integratorId": {
+                                  "type": "string"
+                                },
+                                "refundee": {
+                                  "type": "string",
+                                  "format": "address"
+                                },
+                                "sender": {
+                                  "type": "string",
+                                  "format": "address"
+                                },
+                                "includeSwapCallData": {
+                                  "type": "boolean"
+                                },
+                                "includeTxData": {
+                                  "type": "boolean"
+                                },
+                                "data": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "required": [
+                                      "sourceId",
+                                      "amount",
+                                      "srcToken",
+                                      "destToken",
+                                      "slippage"
+                                    ],
+                                    "properties": {
+                                      "sourceId": {
+                                        "type": "string"
+                                      },
+                                      "amount": {
+                                        "type": "string"
+                                      },
+                                      "srcToken": {
+                                        "type": "string",
+                                        "format": "address"
+                                      },
+                                      "destToken": {
+                                        "type": "string",
+                                        "format": "address"
+                                      },
+                                      "slippage": {
+                                        "type": "number",
+                                        "format": "float"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/status": {
+      "get": {
+        "tags": ["Status"],
+        "summary": "Fetch status for swap or bridge transaction(s)",
+        "description": "Fetches the status of a swap or bridge transaction. You must provide either `txIds` or both `txHash` and `chainId`, but not both sets of parameters.\n\n- For **multiple transactions**, provide a comma-separated list of `txIds` values (`srcChainId-txHash`).\n- For a **single transaction**, provide both `txHash` and `chainId`.\n",
+        "operationId": "getStatus",
+        "parameters": [
+          {
+            "name": "txHash",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Transaction hash (used with `chainId` for single tx lookup)",
+            "example": "0x3c3ac8a72fa362c94b525687443bb397ae408a607f526f06b2cd254df3c38d66"
+          },
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Source chain ID (used with `txHash` for single tx lookup)",
+            "example": 42161
+          },
+          {
+            "name": "txIds",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of `srcChainId-txHash` (e.g., `10-0xabc...,42161-0xdef...`)"
+          }
+        ],
+        "x-parameters-validation": {
+          "oneOf": [
+            {
+              "required": ["txIds"]
+            },
+            {
+              "required": ["txHash", "chainId"]
+            }
+          ]
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully fetched status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/StatusResponseByTxIds"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StatusResponseByTxHash"
+                    }
+                  ]
+                },
+                "examples": {
+                  "byTxIds": {
+                    "summary": "Example response for a request with txIds",
+                    "value": {
+                      "42161-0x4afecedbed3b35d8e3ab88aeca30166e20d09f0a5459512f0b10c4198225ab03": {
+                        "42161_0xaf88d065e77c8cC2239327C5EDb3A432268e5831-137_0x0000000000000000000000000000000000000000": {
+                          "srcChainId": 42161,
+                          "srcToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+                          "srcAmount": "2000000",
+                          "srcAmountUSD": "1.99963",
+                          "srcTxHash": "0x4afecedbed3b35d8e3ab88aeca30166e20d09f0a5459512f0b10c4198225ab03",
+                          "destChainId": 137,
+                          "destToken": "0x0000000000000000000000000000000000000000",
+                          "destAmount": "3828561316214991485",
+                          "destAmountUSD": "1.99569",
+                          "destTxHash": "0xcb891ed63cf151cfdb51cd9c8efbbbe9bff0cb7e87be6e191e6125ef9c6ce8a1",
+                          "account": "0x545d9a8649A092ce25d469591B638057C4DF3385",
+                          "recipient": "0x545d9a8649A092ce25d469591B638057C4DF3385",
+                          "provider": "router",
+                          "allowUserTxOnDestChain": true,
+                          "status": "COMPLETED"
+                        }
+                      }
+                    }
+                  },
+                  "byTxHashAndChainId": {
+                    "summary": "Example response for a request with txHash and chainId",
+                    "value": {
+                      "42161_0xaf88d065e77c8cC2239327C5EDb3A432268e5831-137_0x0000000000000000000000000000000000000000": {
+                        "srcChainId": 42161,
+                        "srcToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+                        "srcAmount": "2000000",
+                        "srcAmountUSD": "1.99963",
+                        "srcTxHash": "0x4afecedbed3b35d8e3ab88aeca30166e20d09f0a5459512f0b10c4198225ab03",
+                        "destChainId": 137,
+                        "destToken": "0x0000000000000000000000000000000000000000",
+                        "destAmount": "3828561316214991485",
+                        "destAmountUSD": "1.99569",
+                        "destTxHash": "0xcb891ed63cf151cfdb51cd9c8efbbbe9bff0cb7e87be6e191e6125ef9c6ce8a1",
+                        "account": "0x545d9a8649A092ce25d469591B638057C4DF3385",
+                        "recipient": "0x545d9a8649A092ce25d469591B638057C4DF3385",
+                        "provider": "router",
+                        "allowUserTxOnDestChain": true,
+                        "status": "COMPLETED"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "StatusResponseItem": {
+        "type": "object",
+        "description": "Individual transaction status data",
+        "properties": {
+          "srcChainId": {
+            "type": "integer",
+            "example": 42161,
+            "description": "Source blockchain network ID"
+          },
+          "srcToken": {
+            "type": "string",
+            "format": "address",
+            "example": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+            "description": "Source token contract address"
+          },
+          "srcAmount": {
+            "type": "string",
+            "example": "2000000",
+            "description": "Source token amount in smallest unit (wei/atoms)"
+          },
+          "srcAmountUSD": {
+            "type": "string",
+            "example": "1.99963",
+            "description": "Source amount value in USD"
+          },
+          "srcTxHash": {
+            "type": "string",
+            "example": "0x4afecedbed3b35d8e3ab88aeca30166e20d09f0a5459512f0b10c4198225ab03",
+            "description": "Source transaction hash"
+          },
+          "destChainId": {
+            "type": "integer",
+            "example": 137,
+            "description": "Destination blockchain network ID"
+          },
+          "destToken": {
+            "type": "string",
+            "format": "address",
+            "example": "0x0000000000000000000000000000000000000000",
+            "description": "Destination token contract address (0x0 for native token)"
+          },
+          "destAmount": {
+            "type": "string",
+            "example": "3828561316214991485",
+            "description": "Destination token amount in smallest unit"
+          },
+          "destAmountUSD": {
+            "type": "string",
+            "example": "1.99569",
+            "description": "Destination amount value in USD"
+          },
+          "destTxHash": {
+            "type": "string",
+            "example": "0xcb891ed63cf151cfdb51cd9c8efbbbe9bff0cb7e87be6e191e6125ef9c6ce8a1",
+            "description": "Destination transaction hash (null if transaction not yet executed)",
+            "nullable": true
+          },
+          "account": {
+            "type": "string",
+            "format": "address",
+            "example": "0x545d9a8649A092ce25d469591B638057C4DF3385",
+            "description": "Account that initiated the transaction"
+          },
+          "recipient": {
+            "type": "string",
+            "format": "address",
+            "example": "0x545d9a8649A092ce25d469591B638057C4DF3385",
+            "description": "Account that will receive the destination tokens"
+          },
+          "provider": {
+            "type": "string",
+            "example": "router",
+            "description": "Bridge/swap provider used for this transaction"
+          },
+          "allowUserTxOnDestChain": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether user action is required on destination chain"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "FAILED",
+              "CANCELLED"
+            ],
+            "example": "COMPLETED",
+            "description": "Current status of the bridge/swap transaction"
+          }
+        },
+        "required": [
+          "srcChainId",
+          "srcToken",
+          "srcAmount",
+          "srcAmountUSD",
+          "srcTxHash",
+          "destChainId",
+          "destToken",
+          "destAmount",
+          "destAmountUSD",
+          "account",
+          "recipient",
+          "provider",
+          "allowUserTxOnDestChain",
+          "status"
+        ]
+      },
+      "StatusResponseByTxHash": {
+        "type": "object",
+        "description": "Response format when querying with txHash and chainId parameters",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/StatusResponseItem",
+          "description": "Transaction status data keyed by 'srcChainId_srcTokenAddress-destChainId_destTokenAddress' format"
+        },
+        "example": {
+          "42161_0xaf88d065e77c8cC2239327C5EDb3A432268e5831-137_0x0000000000000000000000000000000000000000": {
+            "srcChainId": 42161,
+            "srcToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+            "srcAmount": "2000000",
+            "srcAmountUSD": "1.99963",
+            "srcTxHash": "0x4afecedbed3b35d8e3ab88aeca30166e20d09f0a5459512f0b10c4198225ab03",
+            "destChainId": 137,
+            "destToken": "0x0000000000000000000000000000000000000000",
+            "destAmount": "3828561316214991485",
+            "destAmountUSD": "1.99569",
+            "destTxHash": "0xcb891ed63cf151cfdb51cd9c8efbbbe9bff0cb7e87be6e191e6125ef9c6ce8a1",
+            "account": "0x545d9a8649A092ce25d469591B638057C4DF3385",
+            "recipient": "0x545d9a8649A092ce25d469591B638057C4DF3385",
+            "provider": "router",
+            "allowUserTxOnDestChain": true,
+            "status": "COMPLETED"
+          }
+        }
+      },
+      "StatusResponseByTxIds": {
+        "type": "object",
+        "description": "Response format when querying with txIds parameter - groups transactions by their ID",
+        "additionalProperties": {
+          "type": "object",
+          "description": "Transaction group keyed by 'chainId-txHash' format, containing status data for each bridge/swap pair",
+          "additionalProperties": {
+            "$ref": "#/components/schemas/StatusResponseItem",
+            "description": "Transaction status data keyed by 'srcChainId_srcTokenAddress-destChainId_destTokenAddress' format"
+          }
+        },
+        "example": {
+          "42161-0x4afecedbed3b35d8e3ab88aeca30166e20d09f0a5459512f0b10c4198225ab03": {
+            "42161_0xaf88d065e77c8cC2239327C5EDb3A432268e5831-137_0x0000000000000000000000000000000000000000": {
+              "srcChainId": 42161,
+              "srcToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+              "srcAmount": "2000000",
+              "srcAmountUSD": "1.99963",
+              "srcTxHash": "0x4afecedbed3b35d8e3ab88aeca30166e20d09f0a5459512f0b10c4198225ab03",
+              "destChainId": 137,
+              "destToken": "0x0000000000000000000000000000000000000000",
+              "destAmount": "3828561316214991485",
+              "destAmountUSD": "1.99569",
+              "destTxHash": "0xcb891ed63cf151cfdb51cd9c8efbbbe9bff0cb7e87be6e191e6125ef9c6ce8a1",
+              "account": "0x545d9a8649A092ce25d469591B638057C4DF3385",
+              "recipient": "0x545d9a8649A092ce25d469591B638057C4DF3385",
+              "provider": "router",
+              "allowUserTxOnDestChain": true,
+              "status": "COMPLETED"
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad Request - Invalid Parameters",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "description": "A brief description of what caused the bad request error."
+                }
+              },
+              "example": {
+                "error": "Invalid param undefined."
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Resource not found"
+                },
+                "status": {
+                  "type": "string",
+                  "example": "fail"
+                },
+                "request": {
+                  "type": "object",
+                  "properties": {
+                    "method": {
+                      "type": "string",
+                      "example": "POST"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "headers": {
+                      "type": "object"
+                    },
+                    "body": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal Server Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "statusCode": {
+                  "type": "integer",
+                  "example": 500
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Internal Server Error"
+                },
+                "message": {
+                  "type": "string",
+                  "example": "An unexpected error occurred. Please try again later."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

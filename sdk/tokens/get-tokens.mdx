@@ -1,0 +1,58 @@
+---
+title: "Get Tokens"
+description: "Retrieve supported tokens and their information using the DZap SDK"
+icon: "coins"
+---
+
+> Access comprehensive token information across all supported chains, including metadata and availability.
+
+The DZap SDK provides powerful token discovery and information retrieval capabilities, allowing you to access detailed information about thousands of tokens across multiple blockchain networks.
+
+## Basic Token Retrieval
+
+Get all supported tokens on a specific chain:
+
+```typescript
+import { DZapClient } from "@dzap/sdk";
+
+const dZap = DZapClient.getInstance();
+
+// Get all tokens on Arbitrum
+const arbitrumTokens = await dZap.getAllTokens(42161); // Arbitrum
+
+console.log(`Found ${Object.keys(arbitrumTokens).length} tokens on Arbitrum`);
+
+// Access specific token info
+const usdcToken = arbitrumTokens["0xaf88d065e77c8cC2239327C5EDb3A432268e5831"];
+console.log("USDC Info:", usdcToken);
+```
+
+## Token Information Structure
+
+Each token contains comprehensive information:
+
+```typescript
+type TokenInfo = {
+  contract: string; // Contract address (same as address)
+  symbol: string; // Token symbol (e.g., "USDC")
+  decimals: number; // Number of decimals
+  name: string; // Full name (e.g., "USD Coin")
+  balance: string; // User's balance (if account provided)
+  price?: string; // Current price in USD
+  chainId: number; // Chain ID where token exists
+  balanceInUsd?: number | null; // USD value of user's balance
+  isDisabledOnSwapBridge?: {
+    source: boolean; // Disabled as source token
+    destination: boolean; // Disabled as destination token
+  };
+  isDisabledOnZap?: {
+    source: boolean; // Disabled for zap operations
+    destination: boolean;
+  };
+};
+```
+
+## Next Steps
+
+- [Get Token Balances](/sdk/tokens/token-balances) - Retrieve user token balances
+- [Get Token Prices](/sdk/tokens/token-prices) - Access real-time token pricing

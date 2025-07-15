@@ -1,0 +1,85 @@
+---
+title: "Supported Chains"
+description: "Explore all blockchain networks supported by the DZap SDK"
+icon: "link"
+---
+
+> DZap supports multiple blockchain networks, enabling seamless cross-chain operations and comprehensive DeFi access.
+
+The DZap SDK provides extensive multi-chain support, allowing you to interact with DeFi protocols across various blockchain networks. Each chain has specific capabilities and supported features.
+
+## Get Supported Chains
+
+Retrieve all chains supported by DZap:
+
+```typescript
+import { DZapClient } from "@dzap/sdk";
+
+const dZap = DZapClient.getInstance();
+
+// Get all supported chains
+const supportedChains = await dZap.getAllSupportedChains();
+
+console.log(
+  `DZap supports ${Object.keys(supportedChains).length} blockchain networks:`
+);
+Object.values(supportedChains).forEach((chain) => {
+  console.log(`${chain.name} (${chain.chainId}) - ${chain.coin}`);
+});
+
+// Get chains that support specific features
+const bridgeChains = Object.values(supportedChains).filter(
+  (chain) => chain.supportedAs.source && chain.supportedAs.destination
+);
+
+const zapChains = Object.values(supportedChains).filter(
+  (chain) => chain.contracts?.zap
+);
+
+console.log(`Bridge-enabled chains: ${bridgeChains.length}`);
+console.log(`Zap-enabled chains: ${zapChains.length}`);
+```
+
+## Chain Information Structure
+
+Each chain contains comprehensive configuration:
+
+```typescript
+type Chain = {
+  coinKey: string; // Unique identifier
+  chainId: number; // EIP-155 chain ID
+  chainType: string; // 'evm', 'solana', 'cosmos', etc.
+  name: string; // Human-readable name
+  coin: string; // Native coin symbol
+  dcaContract: string; // DCA contract address
+  swapBridgeContract: string; // Swap/bridge contract address
+  logo: string; // Chain logo URL
+  tokenlistUrl?: string; // Token list URL
+  multicallAddress: string; // Multicall contract address
+  blockExplorerUrl: string; // Block explorer URL
+  nativeToken: NativeTokenInfo; // Native token details
+  rpcProviders: ApiRpcResponse[]; // Available RPC endpoints
+  pricingAvailable: boolean; // Price data available
+  balanceAvailable: boolean; // Balance queries supported
+  supportedAs: {
+    source: boolean; // Can be used as source chain
+    destination: boolean; // Can be used as destination chain
+  };
+  contracts?: Partial<{
+    router: string; // Swap router contract
+    dca: string; // DCA contract
+    zap: string; // Zap contract
+  }>;
+  coingecko?: {
+    chainKey: string; // CoinGecko chain identifier
+    nativeTokenKey: string; // CoinGecko native token ID
+  };
+  defiLlama?: {
+    chainKey: string; // DeFiLlama chain identifier
+    nativeTokenKey: string; // DeFiLlama native token ID
+  };
+  disableMultiTxn: boolean; // Whether multi-transaction operations are disabled
+  isEnabled: boolean; // Whether chain is currently enabled
+  mainnet: boolean; // Whether this is a mainnet chain
+};
+```

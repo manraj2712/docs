@@ -1,80 +1,13 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "DZap Technical Documentation",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
     "dark": "#15803D"
   },
   "favicon": "/favicon.svg",
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Get Started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development"
-            ]
-          },
-          {
-            "group": "Essentials",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/settings",
-              "essentials/navigation",
-              "essentials/reusable-snippets"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API Reference",
-        "groups": [
-          {
-            "group": "API Documentation",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Endpoint Examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
-            ]
-          }
-        ]
-      }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Community",
-          "href": "https://mintlify.com/community",
-          "icon": "slack"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
@@ -98,5 +31,67 @@
       "github": "https://github.com/mintlify",
       "linkedin": "https://linkedin.com/company/mintlify"
     }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Home",
+        "pages": ["index"]
+      },
+      {
+        "tab": "SDK",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["sdk/overview", "sdk/installation", "sdk/quickstart"]
+          },
+          {
+            "group": "Trade",
+            "pages": [
+              "sdk/trade/request-quotes",
+              "sdk/trade/execute-trade",
+              "sdk/trade/status-tracking"
+            ]
+          },
+          {
+            "group": "Zap",
+            "pages": [
+              "sdk/zap/get-quotes",
+              "sdk/zap/execute-zap",
+              "sdk/zap/status-tracking"
+            ]
+          },
+          {
+            "group": "Tokens",
+            "pages": [
+              "sdk/tokens/get-tokens",
+              "sdk/tokens/token-balances", 
+              "sdk/tokens/token-prices"
+            ]
+          },
+          {
+            "group": "Chains",
+            "pages": ["sdk/chains/supported-chains"]
+          },
+          {
+            "group": "Approval",
+            "pages": ["sdk/approval-mechanisms"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Trade API",
+            "openapi": "tradeDocs.json"
+          },
+          {
+            "group": "Zap API",
+            "openapi": "zapDocs.json"
+          }
+        ]
+      }
+    ]
   }
 }

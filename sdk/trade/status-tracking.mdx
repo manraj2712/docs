@@ -1,0 +1,75 @@
+---
+title: "Track Trade Status"
+description: "Monitor and track trade transaction status using the DZap SDK"
+icon: "radar"
+---
+
+> After executing a trade, you need to monitor its progress, especially for cross-chain transactions that may take several minutes to complete.
+
+The DZap SDK provides comprehensive status tracking for all trade types, from simple swaps to complex cross-chain bridges.
+
+## Basic Status Tracking
+
+Here's how to check the status of a completed trade:
+
+```typescript
+import { DZapClient } from "@dzap/sdk";
+
+const dZap = DZapClient.getInstance();
+
+const statusResult = await dZap.getTradeTxnStatus({
+  txHash: "0x1234567890abcdef...", // Your transaction hash
+  chainId: 42161, // Source chain ID
+});
+
+console.log("Trade status:", statusResult);
+```
+
+## Status Request Parameters
+
+The `getTradeTxnStatus` function accepts the following parameters:
+
+| Parameter | Type   | Required | Description                                     |
+| --------- | ------ | -------- | ----------------------------------------------- |
+| `txHash`  | string | yes      | The transaction hash from the executed trade    |
+| `chainId` | number | yes      | The chain ID where the transaction was executed |
+
+## Status Response Structure
+
+The status response follows the `TradeStatusResponse` type:
+
+```typescript
+type TradeStatusResponse = {
+  [pair: string]: TradeStatusResponseData;
+};
+
+type TradeStatusResponseData = {
+  srcChainId: number; // Source chain ID
+  srcToken: string; // Source token address
+  srcAmount: string; // Amount sent
+  srcAmountUSD: string; // USD value sent
+  srcTxHash: string; // Source transaction hash
+  destChainId: number; // Destination chain ID
+  destToken: string; // Destination token address
+  destAmount: string; // Amount received
+  destAmountUSD: string; // USD value received
+  destTxHash: string; // Destination transaction hash
+  account: string; // User account
+  recipient: string; // Recipient address
+  outputToken?: string; // Final output token (if different)
+  refundTxHash?: string; // Refund transaction hash (if applicable)
+  provider: string; // Provider used for the trade
+  allowUserTxOnDestChain: boolean; // Whether user action is required
+  status: "COMPLETED" | "PENDING" | "FAILED";
+};
+```
+
+## Best Practices
+
+1. **Implement proper polling intervals** - Don't poll too frequently to avoid rate limits
+2. **Handle all status types** - Prepare for successful, failed, and pending states
+
+<Note>
+  Cross-chain transactions can take anywhere from a few minutes to an hour
+  depending on the bridge used and network congestion.
+</Note>

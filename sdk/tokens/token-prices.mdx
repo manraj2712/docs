@@ -1,0 +1,81 @@
+---
+title: "Token Prices"
+description: "Get real-time token prices using the DZap SDK"
+icon: "chart-line"
+---
+
+> Access real-time token pricing information for supported tokens across all chains.
+
+The DZap SDK provides token pricing capabilities, enabling you to get current price information for tokens when retrieving token details.
+
+## Get Token Prices
+
+Get current prices for multiple tokens:
+
+```typescript
+import { DZapClient } from "@dzap/sdk";
+
+const dZap = DZapClient.getInstance();
+
+// Get current prices for multiple tokens
+const prices = await dZap.getTokenPrices(
+  [
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", // WETH
+  ],
+  1 // Ethereum mainnet
+);
+
+console.log("Current Prices:");
+Object.entries(prices).forEach(([address, price]) => {
+  console.log(`Token ${address}: $${price || "N/A"}`);
+});
+```
+
+## Get Specific Token Details with Price
+
+Get detailed information for a specific token including current price:
+
+```typescript
+// Get detailed information for a specific token with price
+const tokenDetails = await dZap.getTokenDetails(
+  "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC address
+  1, // Ethereum mainnet
+  userAccount, // account (optional)
+  false, // includeBalance
+  true // includePrice
+);
+
+console.log("Token Details with Price:", tokenDetails);
+console.log("Current Price:", tokenDetails.price);
+```
+
+## Token Information with Pricing
+
+When price information is requested, each token includes pricing data:
+
+```typescript
+type TokenInfoWithPrice = {
+  contract: string; // Contract address
+  symbol: string; // Token symbol (e.g., "USDC")
+  decimals: number; // Number of decimals
+  name: string; // Full name (e.g., "USD Coin")
+  balance: string; // User's balance (if account provided)
+  price?: string; // Current price in USD
+  chainId: number; // Chain ID where token exists
+  balanceInUsd?: number | null; // USD value of user's balance
+  isDisabledOnSwapBridge?: {
+    source: boolean; // Disabled as source token
+    destination: boolean; // Disabled as destination token
+  };
+  isDisabledOnZap?: {
+    source: boolean; // Disabled for zap operations
+    destination: boolean;
+  };
+};
+```
+
+## Next Steps
+
+- [Get Token Balances](/sdk/tokens/token-balances) - Retrieve user token balances
+- [Get Tokens](/sdk/tokens/get-tokens) - Basic token information retrieval

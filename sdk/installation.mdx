@@ -1,0 +1,90 @@
+---
+title: "Install DZap SDK"
+description: "Integrate the DZap SDK into your dApp/Wallet/Swap UI"
+icon: "download"
+---
+
+The DZap SDK package provides access to the DZap API to find and execute the best on-chain and cross-chain routes across various bridges and exchanges.
+
+## Installation
+
+<CodeGroup>
+
+```bash npm
+npm install @dzapio/dzap-sdk
+```
+
+```bash yarn
+yarn add @dzapio/dzap-sdk
+```
+
+```bash pnpm
+pnpm add @dzapio/dzap-sdk
+```
+
+</CodeGroup>
+
+## Package Manager Support
+
+The DZap SDK is compatible with all major JavaScript package managers:
+
+- **npm** - The default Node.js package manager
+- **yarn** - Fast, reliable, and secure dependency management
+- **pnpm** - Fast, disk space efficient package manager
+- **bun** - All-in-one JavaScript runtime & toolkit
+
+## TypeScript Support
+
+The SDK is built with TypeScript and includes comprehensive type definitions out of the box. No additional `@types` packages are required.
+
+```typescript
+import { DZapClient } from "@dzapio/dzap-sdk";
+// Full TypeScript support included
+```
+
+## Browser Compatibility
+
+The SDK supports all modern browsers and JavaScript environments:
+
+- **Chrome/Chromium** (latest 2 versions)
+- **Firefox** (latest 2 versions)
+- **Safari** (latest 2 versions)
+- **Edge** (latest 2 versions)
+- **Node.js** (16+)
+
+## Bundle Size
+
+The SDK is optimized for production use with tree-shaking support:
+
+- **Minified**: ~150KB
+- **Gzipped**: ~45KB
+- **Tree-shakeable**: Import only what you need
+
+## Repository & Issues
+
+<CardGroup cols={2}>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/dzapio/dzap-sdk"
+  >
+    View source code and contribute
+  </Card>
+  <Card
+    title="Report Issues"
+    icon="bug"
+    href="https://github.com/dzapio/dzap-sdk/issues"
+  >
+    Found a bug? Let us know
+  </Card>
+</CardGroup>
+
+Check out our complete examples in the [SDK repository](https://github.com/dzapio/dzap-sdk), and feel free to [file an issue](https://github.com/dzapio/dzap-sdk/issues) if you encounter any problems.
+
+## Next Steps
+
+Now that you have the SDK installed, let's get started with the basic setup:
+
+<Card title="Quick Start" icon="rocket" href="/sdk/quickstart">
+  Initialize the SDK and make your first request
+</Card>

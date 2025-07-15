@@ -1,71 +1,217 @@
 ---
-title: Introduction
-description: "Welcome to the home of your new documentation"
+title: "DZap Documentation"
+description: "The ultimate cross-chain DeFi infrastructure for swaps, bridges, and complex yield strategies"
+mode: "wide"
 ---
 
 <img
   className="block dark:hidden"
   src="/images/hero-light.png"
-  alt="Hero Light"
+  alt="DZap Platform"
 />
 <img
   className="hidden dark:block"
   src="/images/hero-dark.png"
-  alt="Hero Dark"
+  alt="DZap Platform"
 />
 
-## Setting up
+# DZap Documentation
 
-The first step to world-class documentation is setting up your editing environments.
+**What can we help you build?**
+
+The ultimate cross-chain DeFi infrastructure for swaps, bridges, and complex yield strategies across 40+ blockchain networks. Build powerful DeFi applications with our comprehensive SDK and APIs.
+
+## Choose a topic below
 
 <CardGroup cols={2}>
-  <Card
-    title="Edit Your Docs"
-    icon="pen-to-square"
-    href="https://mintlify.com/docs/quickstart"
-  >
-    Get your docs set up locally for easy development
+  <Card title="About" icon="book-open" href="/sdk/overview">
+    Learn about DZap and its capabilities
   </Card>
-  <Card
-    title="Preview Changes"
-    icon="image"
-    href="https://mintlify.com/docs/development"
-  >
-    Preview your changes before you push to make sure they're perfect
+  <Card title="SDK" icon="code" href="/sdk/installation">
+    Comprehensive TypeScript SDK for building DeFi apps
   </Card>
 </CardGroup>
 
-## Make it yours
-
-Update your docs to your brand and add valuable content for the best user conversion.
-
 <CardGroup cols={2}>
   <Card
-    title="Customize Style"
-    icon="palette"
-    href="https://mintlify.com/docs/settings/global"
+    title="Trade"
+    icon="arrow-right-arrow-left"
+    href="/sdk/trade/request-quotes"
   >
-    Customize your docs to your company's colors and brands
+    Cross-chain swaps and bridges with best execution
   </Card>
-  <Card
-    title="Reference APIs"
-    icon="code"
-    href="https://mintlify.com/docs/api-playground/openapi"
-  >
-    Automatically generate endpoints from an OpenAPI spec
-  </Card>
-  <Card
-    title="Add Components"
-    icon="screwdriver-wrench"
-    href="https://mintlify.com/docs/content/components/accordions"
-  >
-    Build interactive features and designs to guide your users
-  </Card>
-  <Card
-    title="Get Inspiration"
-    icon="stars"
-    href="https://mintlify.com/customers"
-  >
-    Check out our showcase of our favorite documentation
+  <Card title="Zap" icon="bolt" href="/sdk/zap/get-quotes">
+    Complex DeFi operations in single transactions
   </Card>
 </CardGroup>
+
+<CardGroup cols={3}>
+  <Card title="API Reference" icon="webhook" href="/api-reference/introduction">
+    Complete REST API documentation and specs
+  </Card>
+  <Card
+    title="Supported Chains"
+    icon="globe"
+    href="/sdk/chains/supported-chains"
+  >
+    40+ blockchain networks and their capabilities
+  </Card>
+  <Card
+    title="Approval Mechanisms"
+    icon="shield-check"
+    href="/sdk/approval-mechanisms"
+  >
+    Gas-optimized token approval strategies
+  </Card>
+</CardGroup>
+
+## Core Features
+
+<CardGroup cols={2}>
+  <Card title="🌐 Multi-Chain Infrastructure" icon="globe">
+    Connect to 40+ blockchain networks including Ethereum, Arbitrum, Optimism,
+    Polygon, Base, and more with unified APIs.
+  </Card>
+  <Card title="⚡ Best Execution Engine" icon="zap">
+    Smart routing across 100+ DEXs and bridges to guarantee optimal rates and
+    lowest slippage for every transaction.
+  </Card>
+  <Card title="🔧 Developer Experience" icon="code">
+    TypeScript SDK with full type safety, comprehensive documentation, and
+    real-world examples for rapid development.
+  </Card>
+  <Card title="🛡️ Enterprise Security" icon="shield">
+    Battle-tested infrastructure processing $10B+ volume with non-custodial,
+    audited smart contracts.
+  </Card>
+</CardGroup>
+
+## Integration Paths
+
+<CardGroup cols={2}>
+  <Card title="SDK Integration" icon="cube" href="/sdk/installation">
+    **Full-Featured TypeScript SDK** • Complete TypeScript support with type
+    safety • React hooks and utilities included • Comprehensive error handling •
+    Real-time status monitoring
+  </Card>
+  <Card title="REST API" icon="api" href="/api-reference/introduction">
+    **Direct API Access** • RESTful APIs for all core functionality • OpenAPI
+    3.0 specification included • Rate limiting and authentication • Webhook
+    notifications support
+  </Card>
+</CardGroup>
+
+## Quick Start Examples
+
+<Tabs>
+  <Tab title="Trade">
+    Execute swaps and bridges across any supported chains:
+    
+    ```typescript
+    import { DZapClient } from "@dzap/sdk";
+
+    const dZap = DZapClient.getInstance();
+
+    // Get quotes for trade
+    const quotes = await dZap.getTradeQuotes({
+      integratorId: "your-app",
+      fromChain: 1, // Ethereum
+      data: [{
+        amount: "1000000000", // 1000 USDC
+        srcToken: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        destToken: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        toChain: 42161, // Arbitrum
+        slippage: 1,
+      }],
+      account: userAddress,
+    });
+
+    // Execute the trade
+    const result = await dZap.trade({
+      request: buildTradeRequest(quotes),
+      signer: signer,
+    });
+    ```
+
+  </Tab>
+  
+  <Tab title="Zapping">
+    Complex DeFi operations in single transactions:
+    
+    ```typescript
+    // Get zap quote for liquidity provision
+    const zapQuote = await dZap.getZapQuote({
+      srcChainId: 1,
+      destChainId: 42161,
+      srcToken: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
+      destToken: "0x724dc807b04555b71ed48a6896b6F41593b8C637", // Aave USDC
+      amount: "5000000000", // 5000 USDC
+      account: userAddress,
+      recipient: userAddress,
+      slippage: 1,
+    });
+
+    // Execute zap
+    const zapResult = await dZap.zap({
+      request: zapRequest,
+      signer: signer,
+    });
+    ```
+
+  </Tab>
+</Tabs>
+
+## Getting Started
+
+<Steps>
+  <Step title="Install the SDK">
+    ```bash
+    npm install @dzap/sdk
+    # or
+    yarn add @dzap/sdk
+    ```
+  </Step>
+
+  <Step title="Initialize DZap Client">
+    ```typescript
+    import { DZapClient } from "@dzap/sdk";
+    
+    const dZap = DZapClient.getInstance();
+    ```
+  </Step>
+
+  <Step title="Execute Your First Operation">
+    Start with getting token information or quotes:
+    ```typescript
+    const tokens = await dZap.getAllTokens(1); // Ethereum tokens
+    ```
+  </Step>
+
+  <Step title="Build Your Application">
+    Explore our comprehensive guides and examples to build sophisticated DeFi applications.
+  </Step>
+</Steps>
+
+## Key Statistics
+
+<CardGroup cols={4}>
+  <Card title="$10B+" icon="dollar-sign">
+    Total Volume Processed
+  </Card>
+  <Card title="40+" icon="globe">
+    Supported Blockchains
+  </Card>
+  <Card title="100+" icon="chart-network">
+    Integrated DEXs & Bridges
+  </Card>
+  <Card title="99.9%" icon="shield-check">
+    Uptime SLA
+  </Card>
+</CardGroup>
+
+---
+
+<Note>
+  **Ready to start building?** Check out our [SDK Overview](/sdk/overview)
+  for comprehensive integration details.
+</Note>

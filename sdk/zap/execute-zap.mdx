@@ -1,0 +1,276 @@
+---
+title: "Execute Zap"
+description: "Execute complex multi-step zap transactions using the DZap SDK"
+icon: "rocket"
+---
+
+> Execute complex DeFi operations seamlessly by building transaction data and sending it with your wallet signer. The SDK handles transaction building, gas estimation, and execution automatically.
+
+The `zap` method combines transaction building and execution into a single, streamlined operation. This approach simplifies complex DeFi workflows while maintaining full control over transaction parameters.
+
+<Note>
+  Before executing zaps, tokens typically require approval to allow the DZap
+  contracts to spend them on your behalf. Learn more about gas-optimized
+  approval mechanisms in the [Approval Mechanisms](/sdk/approval-mechanisms)
+  section.
+</Note>
+
+## Zap Execution
+
+Execute a zap using the zap method:
+
+```typescript
+import { DZapClient, ZapBuildTxnRequest, ZapTransactionStep } from "@dzap/sdk";
+
+const dZap = DZapClient.getInstance();
+
+const zapRequest: ZapBuildTxnRequest = {
+  srcChainId: 1,
+  destChainId: 1,
+  account: userAccount,
+  srcToken: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
+  destToken: "0x724dc807b04555b71ed48a6896b6F41593b8C637", // Protocol-specific token
+  amount: "1000000000", // 1000 USDC
+  recipient: userAccount,
+  refundee: userAccount,
+  slippage: 1.0,
+};
+
+// Option 1: Build and execute in one call
+
+const result = await dZap.zap({
+  request: zapRequest,
+  signer: signer,
+});
+
+if (result.status === "success") {
+  console.log("Zap executed successfully:", result.txnHash);
+} else {
+  console.error("Zap execution failed:", result.errorMsg);
+}
+
+// Option 2: Build steps first, then execute
+
+let buildResponse: ZapBuildTxnResponse;
+try {
+  buildResponse = await dZap.buildZapTxn(zapRequest);
+} catch (error) {
+  console.error("Zap build failed:", error);
+  return;
+}
+
+console.log("Build response:");
+console.log(`Expected output: ${buildResponse.amountOut}`);
+console.log(`Number of executable steps: ${buildResponse.steps.length}`);
+console.log(`Number of path steps: ${buildResponse.path.length}`);
+
+// Execute with pre-built steps
+const txnResponse = await dZap.zap({
+  request: zapRequest,
+  steps: buildResponse.steps,
+  signer: signer,
+});
+
+if (txnResponse.status === "success") {
+  console.log("Zap executed successfully:", txnResponse.txnHash);
+} else {
+  console.error("Zap execution failed:", txnResponse.errorMsg);
+}
+```
+
+## Parameters
+
+The `zap` function expects an object with these parameters:
+
+### Required Parameters
+
+| Parameter | Type                   | Required | Description                                                            |
+| --------- | ---------------------- | -------- | ---------------------------------------------------------------------- |
+| `request` | ZapBuildTxnRequest     | yes      | The zap build request containing operation parameters                  |
+| `signer`  | Signer \| WalletClient | yes      | Ethers signer or viem wallet client for transaction execution          |
+| `steps`   | ZapTransactionStep[]   | no       | Pre-built transaction steps (if not provided, will build from request) |
+
+### ZapBuildTxnRequest Structure
+
+| Parameter         | Type                           | Required | Description                                                  |
+| ----------------- | ------------------------------ | -------- | ------------------------------------------------------------ |
+| `srcChainId`      | number                         | yes      | Source chain ID                                              |
+| `destChainId`     | number                         | yes      | Destination chain ID                                         |
+| `account`         | HexString                      | yes      | User account address                                         |
+| `srcToken`        | HexString                      | yes      | Source token address                                         |
+| `destToken`       | HexString                      | yes      | Destination token/protocol address                           |
+| `amount`          | string                         | yes      | Amount to zap (in token units)                               |
+| `recipient`       | HexString                      | yes      | Address to receive the result                                |
+| `refundee`        | HexString                      | yes      | Address to receive refunds                                   |
+| `slippage`        | number                         | yes      | Slippage tolerance percentage                                |
+| `permitData`      | string                         | no       | Pre-signed permit data for gasless approvals                 |
+| `estimateGas`     | boolean                        | no       | Whether to estimate gas for the transaction                  |
+| `positionDetails` | ZapRouteRequestPositionDetails | no       | Position-specific details for liquidity positions            |
+| `poolDetails`     | ZapRouteRequestPoolDetails     | no       | Pool-specific details for liquidity pool operations          |
+| `allowedBridges`  | string[]                       | no       | Array of allowed bridge protocols for cross-chain operations |
+| `allowedDexes`    | string[]                       | no       | Array of allowed DEX protocols for swapping operations       |
+
+### Additional Type Definitions
+
+```typescript
+type ZapRouteRequestPositionDetails = {
+  nftId: string; // NFT ID for existing liquidity positions
+};
+
+type ZapRouteRequestPoolDetails = {
+  lowerTick: number; // Lower tick for liquidity range
+  upperTick: number; // Upper tick for liquidity range
+  metadata?: unknown; // Additional pool metadata, sent in quotes response
+};
+```
+
+## Complete Example with Quotes and Approvals
+
+Here's a full example that gets quotes, handles approvals, and executes a zap:
+
+```typescript
+import { DZapClient, Services } from "@dzap/sdk";
+import {
+  ZapQuoteRequest,
+  ZapBuildTxnRequest,
+  ApprovalModes,
+  PermitTypes,
+} from "@dzap/sdk";
+
+const dZap = DZapClient.getInstance();
+
+// Step 1: Get zap quote
+const quoteRequest: ZapQuoteRequest = {
+  srcChainId: 42161, // Arbitrum
+  destChainId: 42161,
+  account: userAccount,
+  srcToken: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC on Arbitrum
+  destToken: "0x724dc807b04555b71ed48a6896b6F41593b8C637", // Aave USDC
+  amount: "1000000", // 1 USDC
+  recipient: userAccount,
+  slippage: 1,
+};
+
+const zapQuote = await dZap.getZapQuote(quoteRequest);
+console.log("Zap quote received");
+console.log("Expected output:", zapQuote.amountOut);
+console.log("Path steps:", zapQuote.path);
+
+// Step 2: Handle approvals
+const tokens = [
+  {
+    address: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    amount: BigInt("1000000"),
+  },
+];
+
+// Check current allowances
+const allowanceCheck = await dZap.getAllowance({
+  chainId: 42161,
+  sender: userAccount,
+  spender: zapQuote.approvalData?.approveTo,
+  tokens: tokens,
+  service: Services.trade,
+  mode: ApprovalModes.AutoPermit, // Automatically selects optimal approval method
+});
+
+console.log("Allowance check:", allowanceCheck.data);
+
+let permitData: string | undefined;
+
+// Handle approvals if needed
+const isApprovalNeeded =
+  allowanceCheck.data[quotesRequest.srcToken].approvalNeeded;
+
+const isSignatureNeeded =
+  allowanceCheck.data[quotesRequest.srcToken].signatureNeeded;
+
+if (isApprovalNeeded) {
+  await dZap.approve({
+    chainId: 42161,
+    signer: signer,
+    sender: userAccount,
+    tokens: tokens,
+    service: Services.trade,
+    mode: ApprovalModes.AutoPermit, // Uses optimal approval strategy
+    approvalTxnCallback: async ({ txnDetails, address }) => {
+      console.log(`Approval for ${address}:`, txnDetails);
+    },
+  });
+
+  console.log("Approvals completed");
+}
+
+// Handle permit signatures if possible (gasless)
+if (isSignatureNeeded) {
+  const signatures = await dZap.sign({
+    chainId: 42161,
+    sender: userAccount,
+    tokens: tokens.map((t) => ({
+      address: t.address,
+      amount: t.amount.toString(),
+    })),
+    signer: signer,
+    spender: zapQuote.approvalData?.approveTo,
+    service: Services.trade,
+    permitType: PermitTypes.AutoPermit, // Automatically selects optimal permit type
+    signatureCallback: async (res) => {
+      permitData = res.permitData;
+    },
+  });
+  permitData = signatures.data;
+  console.log("Permits signed");
+}
+
+// Step 3: Build zap request
+const request: ZapBuildTxnRequest = {
+  srcChainId: 42161,
+  destChainId: 42161,
+  account: userAccount,
+  srcToken: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+  destToken: "0x724dc807b04555b71ed48a6896b6F41593b8C637",
+  amount: "1000000",
+  recipient: userAccount,
+  refundee: userAccount,
+  slippage: 1,
+  permitData, // Include permit data if available
+};
+
+// Step 4: Execute zap
+const zapResult = await dZap.zap({
+  request: request,
+  signer: signer,
+});
+
+if (zapResult.status === "success") {
+  console.log("Zap completed successfully!");
+  console.log("Transaction hash:", zapResult.txnHash);
+} else {
+  console.error("Zap failed:", zapResult.errorMsg);
+}
+```
+
+## Best Practices
+
+1. **Always get quotes first** to understand the expected outcome and fees
+2. **Validate balances** before execution to ensure sufficient funds
+3. **Check allowances** and execute approvals/permits if needed
+4. **Implement proper error handling** with retry logic for failed zaps
+5. **Use appropriate slippage settings** based on market conditions and complexity
+6. **Monitor transaction status** for zap completion and position updates
+
+## Next Steps
+
+- [Monitor Zap Status](/sdk/zap/status-tracking) - Track execution progress and final positions
+
+<Warning>
+  Always ensure users have sufficient balance for both the zap amount and gas
+  fees before execution. Zap operations can be complex and may require multiple
+  transactions.
+</Warning>
+
+<Tip>
+  Use the `buildZapTxn` method first to understand the steps involved before
+  executing. This helps with user experience and debugging complex zap
+  operations.
+</Tip>

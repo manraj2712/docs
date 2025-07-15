@@ -1,0 +1,289 @@
+---
+title: "Execute Trade"
+description: "Execute trades directly using the DZap SDK"
+icon: "rocket"
+---
+
+> Execute trades seamlessly by building transaction data and sending it with your wallet signer. The SDK handles transaction building, gas estimation, and execution automatically.
+
+The `trade` method combines transaction building and execution into a single, streamlined operation. This approach simplifies the trading process while maintaining full control over transaction parameters.
+
+<Note>
+  Before executing trades, tokens typically require approval to allow the DZap
+  contracts to spend them on your behalf. Learn more about gas-optimized
+  approval mechanisms in the [Approval Mechanisms](/sdk/approval-mechanisms)
+  section.
+</Note>
+
+## Trade Execution
+
+Execute a trade using the trade method:
+
+```typescript
+import { DZapClient } from "@dzap/sdk";
+import { TradeBuildTxnRequest } from "@dzap/sdk";
+
+const dZap = DZapClient.getInstance();
+
+// Build trade request
+const request: TradeBuildTxnRequest = {
+  integratorId: "your-integrator-id", // Your unique integrator ID (use "dzap" for testing)
+  fromChain: 42161, // Arbitrum
+  sender: userAccount,
+  refundee: userAccount,
+  data: [
+    {
+      amount: "1000000", // 1 USDC
+      srcToken: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC
+      srcDecimals: 6,
+      destToken: "0x4200000000000000000000000000000000000006", // WETH
+      destDecimals: 18,
+      toChain: 8453, // Base
+      selectedRoute: "squid", // From quotes response
+      recipient: userAccount,
+      slippage: 1, // 1% slippage
+    },
+  ],
+};
+
+// Option 1: Build and execute in one call
+
+const result = await dZap.trade({
+  request,
+  signer,
+});
+
+if (result.status === "success") {
+  console.log("Trade executed successfully:", result.txnHash);
+} else {
+  console.error("Trade execution failed:", result.errorMsg);
+}
+
+// Option 2: Build transaction data separately and execute
+
+let buildResponse: TradeBuildTxnResponse;
+try {
+  buildResponse = await dZap.buildTradeTxn(request);
+  console.log("Build response:", buildResponse);
+} catch (error) {
+  console.error("Error building trade transaction:", error);
+  return;
+}
+
+const txnResponse = await dZap.trade({
+  request,
+  signer,
+  txnData: buildResponse,
+});
+
+if (txnResponse.status === "success") {
+  console.log("Trade executed successfully:", txnResponse.txnHash);
+} else {
+  console.error("Trade failed:", txnResponse.errorMsg);
+}
+```
+
+## Parameters
+
+The `trade` function expects an object with these parameters:
+
+### Required Parameters
+
+| Parameter | Type                   | Required | Description                                                  |
+| --------- | ---------------------- | -------- | ------------------------------------------------------------ |
+| `request` | TradeBuildTxnRequest   | yes      | The trade build request containing all trade details         |
+| `signer`  | Signer \| WalletClient | yes      | Ethers signer or viem wallet client for signing transactions |
+| `txnData` | TradeBuildTxnResponse  | no       | Pre-built transaction data (skips build step if provided)    |
+
+### TradeBuildTxnRequest Structure
+
+| Parameter           | Type                       | Required | Description                               |
+| ------------------- | -------------------------- | -------- | ----------------------------------------- |
+| `integratorId`      | string                     | yes      | Your integrator identifier (e.g. "dzap")  |
+| `fromChain`         | number                     | yes      | Source chain ID                           |
+| `sender`            | HexString                  | yes      | Wallet address sending the transaction    |
+| `refundee`          | HexString                  | yes      | Address to receive refunds                |
+| `data`              | TradeBuildTxnRequestData[] | yes      | Array of trade data                       |
+| `disableEstimation` | boolean                    | no       | Disable gas estimation (default: false)   |
+| `publicKey`         | string                     | no       | Public key for some chains (e.g., Solana) |
+
+### TradeBuildTxnRequestData Structure
+
+| Parameter        | Type           | Required | Description                           |
+| ---------------- | -------------- | -------- | ------------------------------------- |
+| `amount`         | string         | yes      | Amount to trade (in token units)      |
+| `srcToken`       | string         | yes      | Source token address                  |
+| `srcDecimals`    | number         | yes      | Source token decimals                 |
+| `destToken`      | string         | yes      | Destination token address             |
+| `destDecimals`   | number         | yes      | Destination token decimals            |
+| `toChain`        | number         | yes      | Destination chain ID                  |
+| `selectedRoute`  | string         | yes      | Route identifier from quotes          |
+| `recipient`      | string         | yes      | Address to receive destination tokens |
+| `slippage`       | number         | yes      | Slippage tolerance percentage         |
+| `additionalInfo` | AdditionalInfo | no       | Additional route-specific data        |
+| `permitData`     | string         | no       | Pre-signed permit data                |
+
+## Complete Example with Quotes and Approvals
+
+Here's a full example that gets quotes, handles approvals, and executes a trade:
+
+```typescript
+import { DZapClient, Services } from "@dzap/sdk";
+import {
+  TradeQuotesRequest,
+  TradeBuildTxnRequest,
+  ApprovalModes,
+  PermitTypes,
+} from "@dzap/sdk";
+
+const dZap = DZapClient.getInstance();
+
+// Step 1: Get quotes
+const quotesRequest: TradeQuotesRequest = {
+  integratorId: "dzap",
+  fromChain: 42161, // Arbitrum
+  data: [
+    {
+      amount: "1000000", // 1 USDC
+      srcToken: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC on Arbitrum
+      srcDecimals: 6,
+      destToken: "0x4200000000000000000000000000000000000006", // WETH on Base
+      destDecimals: 18,
+      toChain: 8453, // Base
+      slippage: 1,
+    },
+  ],
+  account: userAccount,
+};
+
+const quotes = await dZap.getTradeQuotes(quotesRequest);
+const pairKey = Object.keys(quotes)[0];
+const recommendedSource = quotes[pairKey].recommendedSource;
+
+// Step 2: Check allowances and handle approvals
+const tokens = [
+  {
+    address: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831" as HexString,
+    amount: BigInt("1000000"),
+  },
+];
+
+// Check current allowances
+const allowanceCheck = await dZap.getAllowance({
+  chainId: 42161,
+  sender: userAccount,
+  tokens: tokens,
+  service: Services.trade,
+  mode: ApprovalModes.AutoPermit, // Automatically selects optimal approval method
+});
+
+console.log("Allowance check:", allowanceCheck.data);
+
+let permitData: string | undefined;
+
+// Handle approvals if needed
+const isApprovalNeeded =
+  allowanceCheck.data[quotesRequest.srcToken].approvalNeeded;
+
+const isSignatureNeeded =
+  allowanceCheck.data[quotesRequest.srcToken].signatureNeeded;
+
+if (isApprovalNeeded) {
+  await dZap.approve({
+    chainId: 42161,
+    signer: signer,
+    sender: userAccount,
+    tokens: tokens,
+    service: Services.trade,
+    mode: ApprovalModes.AutoPermit, // Uses optimal approval strategy
+    approvalTxnCallback: async ({ txnDetails, address }) => {
+      console.log(`Approval for ${address}:`, txnDetails);
+    },
+  });
+
+  console.log("Approvals completed");
+}
+
+// Handle permit signatures if possible (gasless)
+if (isSignatureNeeded) {
+  const signatures = await dZap.sign({
+    chainId: 42161,
+    sender: userAccount,
+    tokens: tokens.map((t) => ({
+      address: t.address,
+      amount: t.amount.toString(),
+    })),
+    signer: signer,
+    service: Services.trade,
+    permitType: PermitTypes.AutoPermit, // Automatically selects optimal permit type
+    signatureCallback: async (res) => {
+      permitData = res.permitData;
+    },
+  });
+
+  permitData = signatures.data;
+  console.log("Permits signed");
+}
+
+// Step 3: Build trade request from selected quote
+const request: TradeBuildTxnRequest = {
+  integratorId: "dzap",
+  fromChain: 42161,
+  sender: userAccount,
+  refundee: userAccount,
+  data: [
+    {
+      amount: "1000000",
+      srcToken: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      srcDecimals: 6,
+      destToken: "0x4200000000000000000000000000000000000006",
+      destDecimals: 18,
+      toChain: 8453,
+      selectedRoute: recommendedSource,
+      recipient: userAccount,
+      slippage: 1,
+      permitData: permitData, // Include permit data if available
+    },
+  ],
+};
+
+// Step 4: Execute the trade
+const tradeResult = await dZap.trade({
+  request: request,
+  signer: signer,
+});
+
+if (tradeResult.status === "success") {
+  console.log("✅ Trade executed successfully!");
+  console.log("Transaction hash:", tradeResult.txnHash);
+
+  // Monitor cross-chain progress
+  const status = await dZap.getTradeTxnStatus({
+    txHash: tradeResult.txnHash!,
+    chainId: "42161",
+  });
+
+  console.log("Trade status:", status);
+} else {
+  console.error("❌ Trade failed:", tradeResult.errorMsg);
+}
+```
+
+## Best Practices
+
+1. **Always validate balances** before execution
+2. **Check allowances** and execute approvals if needed
+3. **Implement proper error handling** with retry logic
+4. **Use appropriate slippage settings** based on market conditions
+5. **Monitor transaction status** for cross-chain trades
+
+## Next Steps
+
+After executing trades:
+
+1. [Track the trade status](/sdk/trade/status-tracking) to monitor progress
+
+<Warning>
+  Always ensure users have sufficient balance for both the trade amount and gas
+  fees before execution.
+</Warning>

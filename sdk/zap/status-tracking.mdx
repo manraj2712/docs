@@ -1,0 +1,133 @@
+---
+title: "Track Zap Status"
+description: "Monitor and track complex zap transaction status using the DZap SDK"
+icon: "radar"
+---
+
+> Monitor the progress of complex multi-step zap operations, from simple swaps to cross-chain DeFi strategies.
+
+Zap operations can involve multiple steps across different protocols and chains. The DZap SDK provides comprehensive status tracking to monitor each step of your zap execution and handle any issues that may arise.
+
+## Basic Zap Status Tracking
+
+Monitor the status of a completed zap operation:
+
+```typescript
+import { DZapClient } from "@dzap/sdk";
+
+const dZap = DZapClient.getInstance();
+
+const zapStatus = await dZap.getZapTxnStatus({
+  chainId: 8453, // Chain ID where the zap was executed
+  txnHash: "0x1234567890abcdef...", // Transaction hash from zap execution
+});
+
+console.log("Zap Status:", zapStatus);
+```
+
+## Zap Status Request Parameters
+
+The `getZapTxnStatus` function accepts the following parameters:
+
+| Parameter | Type   | Required | Description                                 |
+| --------- | ------ | -------- | ------------------------------------------- |
+| `chainId` | number | yes      | Chain ID where the transaction was executed |
+| `txnHash` | string | yes      | Transaction hash from the zap execution     |
+
+## Zap Status Response Structure
+
+The `getZapTxnStatus` method returns a response that follows this structure:
+
+```typescript
+type ZapTxnStatusResponse = {
+  status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED"; // Overall zap status
+  steps: ZapStepStatus[];
+};
+
+type ZapStepStatus = {
+  chainId: number; // Chain where step was executed
+  hash: string; // Transaction hash for this step
+  status: "PENDING" | "COMPLETED" | "FAILED";
+  action: string; // Action type (swap, bridge, deposit, etc.)
+  protocol: {
+    id: string; // Protocol identifier
+    name: string; // Protocol name
+    icon: string; // Protocol icon URL
+  };
+  input: Array<{
+    amount: string; // Input amount
+    amountUSD: string; // USD value
+    asset: {
+      chainId: number;
+      address: string;
+      symbol: string;
+      decimals: number;
+      type: string;
+      logo: string;
+      name: string;
+      price?: string;
+    };
+  }>;
+  output: Array<{
+    amount: string; // Output amount
+    amountUSD: string; // USD value
+    asset: {
+      chainId: number;
+      address: string;
+      symbol: string;
+      decimals: number;
+      type: string;
+      logo: string;
+      name: string;
+      price?: string;
+    };
+  }>;
+};
+```
+
+## Working with Zap Status Results
+
+Process and display zap status information:
+
+```typescript
+const zapStatus = await dZap.getZapTxnStatus({
+  chainId: 8453,
+  txnHash: "0x1234567890abcdef...",
+});
+
+console.log(`Overall zap status: ${zapStatus.status}`);
+console.log(`Number of steps: ${zapStatus.steps.length}`);
+
+// Process each step
+zapStatus.steps.forEach((step, index) => {
+  console.log(`\nStep ${index + 1}:`);
+  console.log(`  Action: ${step.action}`);
+  console.log(`  Protocol: ${step.protocol.name}`);
+  console.log(`  Status: ${step.status}`);
+  console.log(`  Chain: ${step.chainId}`);
+  console.log(`  Transaction: ${step.hash}`);
+
+  // Show input assets
+  step.input.forEach((input, inputIndex) => {
+    console.log(
+      `  Input ${inputIndex + 1}: ${input.amount} ${input.asset.symbol} ($${
+        input.amountUSD
+      })`
+    );
+  });
+
+  // Show output assets
+  step.output.forEach((output, outputIndex) => {
+    console.log(
+      `  Output ${outputIndex + 1}: ${output.amount} ${output.asset.symbol} ($${
+        output.amountUSD
+      })`
+    );
+  });
+});
+```
+
+## Best Practices
+
+1. **Implement proper polling intervals** - Don't poll too frequently to avoid rate limits (recommended: 5-10 seconds)
+2. **Handle all status types** - Prepare for successful, failed, pending, and refunded states

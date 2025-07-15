@@ -1,0 +1,3466 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "DZap Zap API",
+    "description": "API for DZap Zap service",
+    "version": "1.0.0",
+    "contact": {
+      "name": "DZap Support",
+      "url": "https://discord.com/invite/aRHESJB9md",
+      "email": "support@dzap.io"
+    },
+    "x-logo": {
+      "url": "https://app.dzap.io/_next/static/media/d-icon.e6f1d10e.svg",
+      "altText": "DZap Logo"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://zap.dzap.io",
+      "description": "Production server"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["error"],
+            "description": "Response status"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message",
+            "example": "An error occurred"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal Server Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/v1/config/chains": {
+      "get": {
+        "tags": ["Config"],
+        "summary": "Supported chains",
+        "description": "Retrieve supported chain IDs and their supported providers.",
+        "responses": {
+          "200": {
+            "description": "Successful response with supported chains",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["status", "data"],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["success"],
+                      "description": "Response status"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": ["name", "supportedProviders"],
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "description": "Chain name"
+                          },
+                          "supportedProviders": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "List of supported provider IDs for this chain"
+                          }
+                        }
+                      },
+                      "example": {
+                        "1": {
+                          "name": "Ethereum",
+                          "supportedProviders": [
+                            "beefy",
+                            "aave",
+                            "pendle",
+                            "balancer",
+                            "uniswap"
+                          ]
+                        },
+                        "8453": {
+                          "name": "Base",
+                          "supportedProviders": ["balancer", "aerodrome"]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/v1/config/providers": {
+      "get": {
+        "tags": ["Config"],
+        "summary": "Supported providers",
+        "description": "Retrieve supported provider IDs and metadata.",
+        "responses": {
+          "200": {
+            "description": "Successful response with supported providers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["status", "data"],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["success"],
+                      "description": "Response status"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": ["name", "id", "logo"],
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "description": "Display name of the provider",
+                            "example": "Aerodrome"
+                          },
+                          "id": {
+                            "type": "string",
+                            "description": "Unique identifier of the provider",
+                            "example": "aerodrome"
+                          },
+                          "logo": {
+                            "type": "string",
+                            "format": "uri",
+                            "description": "URL of the provider logo",
+                            "example": "https://aerodrome.finance/aerodrome.svg"
+                          },
+                          "supportedChainIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "number",
+                              "description": "Chain ID supported by the provider",
+                              "example": 1
+                            },
+                            "example": [1, 137, 250]
+                          }
+                        }
+                      },
+                      "example": {
+                        "aerodrome": {
+                          "name": "Aerodrome",
+                          "id": "aerodrome",
+                          "logo": "https://aerodrome.finance/aerodrome.svg",
+                          "supportedChainIds": [1, 137, 250]
+                        },
+                        "uniswap": {
+                          "name": "Uniswap",
+                          "id": "uniswap",
+                          "logo": "https://app.uniswap.org/favicon.png",
+                          "supportedChainIds": [1, 137, 250]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/v1/quote": {
+      "post": {
+        "tags": ["Quote"],
+        "summary": "Get quote for zapping tokens across chains",
+        "description": "Retrieve a quote for zapping tokens across chains. Supports optional parameters for adding or removing liquidity.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "srcToken",
+                  "srcChainId",
+                  "destToken",
+                  "destChainId",
+                  "recipient",
+                  "slippage",
+                  "account"
+                ],
+                "properties": {
+                  "srcToken": {
+                    "type": "string",
+                    "description": "Source token address",
+                    "example": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+                  },
+                  "srcChainId": {
+                    "type": "integer",
+                    "description": "Source chain ID",
+                    "example": 8453
+                  },
+                  "destToken": {
+                    "type": "string",
+                    "description": "Destination token address",
+                    "example": "0x4C36388bE6F416A29C8d8Eee81C771cE6bE14B18"
+                  },
+                  "destChainId": {
+                    "type": "integer",
+                    "description": "Destination chain ID",
+                    "example": 8453
+                  },
+                  "amount": {
+                    "type": "string",
+                    "description": "Amount to swap or liquidity to add/remove (optional)",
+                    "example": "5000000"
+                  },
+                  "recipient": {
+                    "type": "string",
+                    "description": "Recipient address for the swapped tokens",
+                    "example": "0x99BCEBf44433E901597D9fCb16E799a4847519f6"
+                  },
+                  "slippage": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "Slippage tolerance in percentage",
+                    "example": 0.5
+                  },
+                  "account": {
+                    "type": "string",
+                    "description": "Account address initiating the zap",
+                    "example": "0x99BCEBf44433E901597D9fCb16E799a4847519f6"
+                  },
+                  "permit": {
+                    "type": "string",
+                    "description": "Encoded permit2 data for ERC20 tokens (optional)"
+                  },
+                  "positionDetails": {
+                    "type": "object",
+                    "description": "Optional position details for NFT-related operations",
+                    "properties": {
+                      "nftId": {
+                        "type": "string",
+                        "description": "NFT ID associated with the zap"
+                      }
+                    }
+                  },
+                  "poolDetails": {
+                    "type": "object",
+                    "description": "Optional pool details for liquidity operations",
+                    "properties": {
+                      "lowerTick": {
+                        "type": "integer",
+                        "description": "Lower tick for liquidity range"
+                      },
+                      "upperTick": {
+                        "type": "integer",
+                        "description": "Upper tick for liquidity range"
+                      }
+                    }
+                  },
+                  "allowedBridges": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "description": "List of allowed bridge protocols"
+                    },
+                    "description": "Optional list of allowed bridges for the swap"
+                  },
+                  "allowedDexes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "description": "List of allowed swap protocols"
+                    },
+                    "description": "Optional list of allowed swap protocols for the swap"
+                  }
+                },
+                "example": {
+                  "srcToken": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                  "srcChainId": 8453,
+                  "destToken": "0xd0b53D9277642d899DF5C87A3966A349A798F224",
+                  "destChainId": 8453,
+                  "amount": "5000000",
+                  "recipient": "0x99BCEBf44433E901597D9fCb16E799a4847519f6",
+                  "slippage": 0.5,
+                  "account": "0x99BCEBf44433E901597D9fCb16E799a4847519f6",
+                  "positionDetails": {},
+                  "poolDetails": {}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response with Path information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "description": "Indicates whether the operation was successful"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "Path information or additional details",
+                      "properties": {
+                        "amountOut": {
+                          "type": "string",
+                          "description": "Estimated output amount after the zap"
+                        },
+                        "approvalData": {
+                          "type": "object",
+                          "description": "Approval data if required for the transaction",
+                          "properties": {
+                            "approveTo": {
+                              "type": "string",
+                              "description": "Address to approve for spending the token"
+                            },
+                            "callTo": {
+                              "type": "string",
+                              "description": "Address to call for the approval"
+                            },
+                            "amount": {
+                              "type": "string",
+                              "description": "Amount to approve in decimal format"
+                            },
+                            "tokenId": {
+                              "type": "string",
+                              "description": "Token ID if applicable (for NFTs)"
+                            }
+                          }
+                        },
+                        "path": {
+                          "type": "array",
+                          "description": "List of steps in the path",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "action": {
+                                "type": "string",
+                                "description": "Action type (e.g., swap, bridge, deposit)"
+                              },
+                              "protocol": {
+                                "type": "object",
+                                "description": "Protocol details for the action",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "description": "Protocol ID"
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "description": "Protocol name"
+                                  },
+                                  "icon": {
+                                    "type": "string",
+                                    "description": "Protocol icon URL"
+                                  }
+                                }
+                              },
+                              "estimatedDuration": {
+                                "type": "number",
+                                "description": "Estimated duration for the action in seconds"
+                              },
+                              "fee": {
+                                "type": "array",
+                                "description": "Fee details for the action",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "type": "string",
+                                      "description": "Fee amount in decimal format"
+                                    },
+                                    "amountUSD": {
+                                      "type": "string",
+                                      "description": "Fee amount in USD"
+                                    },
+                                    "included": {
+                                      "type": "boolean",
+                                      "description": "Indicates if the fee is included in the amount or is charged separately from user balance"
+                                    },
+                                    "asset": {
+                                      "type": "object",
+                                      "required": [
+                                        "chainId",
+                                        "address",
+                                        "symbol",
+                                        "logo",
+                                        "decimals",
+                                        "price",
+                                        "type"
+                                      ],
+                                      "properties": {
+                                        "chainId": {
+                                          "type": "number",
+                                          "description": "Chain ID where the asset exists.",
+                                          "example": 8453
+                                        },
+                                        "address": {
+                                          "type": "string",
+                                          "description": "Contract address of the asset.",
+                                          "example": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+                                        },
+                                        "symbol": {
+                                          "type": "string",
+                                          "description": "Token symbol.",
+                                          "example": "cbBTC"
+                                        },
+                                        "logo": {
+                                          "type": "string",
+                                          "description": "URL to the asset logo.",
+                                          "example": "https://static.debank.com/image/base_token/logo_url/0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf/a4ae837a6ca2fc45f07a74898cc4ba45.png"
+                                        },
+                                        "decimals": {
+                                          "type": "number",
+                                          "description": "Number of decimals for the asset.",
+                                          "example": 8
+                                        },
+                                        "price": {
+                                          "type": "string",
+                                          "description": "Current price of the asset in USD.",
+                                          "example": "84152"
+                                        },
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [
+                                            "NATIVE",
+                                            "ERC20",
+                                            "ERC721",
+                                            "ERC1155"
+                                          ],
+                                          "description": "Type of the asset.",
+                                          "example": "ERC20"
+                                        },
+                                        "provider": {
+                                          "type": "object",
+                                          "required": ["id", "name", "logo"],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string",
+                                              "description": "Unique identifier for the provider.",
+                                              "example": "openeden"
+                                            },
+                                            "name": {
+                                              "type": "string",
+                                              "description": "Name of the provider.",
+                                              "example": "Open Eden"
+                                            },
+                                            "logo": {
+                                              "type": "string",
+                                              "description": "URL to the provider logo.",
+                                              "example": "https://app.openeden.com/tbill/favicons/favicon.svg"
+                                            }
+                                          }
+                                        },
+                                        "underlyingAssets": {
+                                          "type": "array",
+                                          "description": "List of underlying assets.",
+                                          "items": {
+                                            "type": "object",
+                                            "required": [
+                                              "chainId",
+                                              "address",
+                                              "symbol",
+                                              "name",
+                                              "logo",
+                                              "decimals"
+                                            ],
+                                            "properties": {
+                                              "chainId": {
+                                                "type": "number",
+                                                "description": "Chain ID of the underlying token.",
+                                                "example": 8453
+                                              },
+                                              "address": {
+                                                "type": "string",
+                                                "description": "Contract address of the underlying token.",
+                                                "example": "0x4200000000000000000000000000000000000006"
+                                              },
+                                              "name": {
+                                                "type": "string",
+                                                "description": "Name of the underlying token.",
+                                                "example": "Wrapped Ether"
+                                              },
+                                              "symbol": {
+                                                "type": "string",
+                                                "description": "Symbol of the underlying token.",
+                                                "example": "WETH"
+                                              },
+                                              "decimals": {
+                                                "type": "number",
+                                                "description": "Number of decimals for the underlying token.",
+                                                "example": 18
+                                              },
+                                              "logo": {
+                                                "type": "string",
+                                                "description": "URL to the underlying token logo.",
+                                                "example": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "input": {
+                                "type": "array",
+                                "description": "Input details",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "type": "string",
+                                      "description": "Amount in decimals format"
+                                    },
+                                    "amountUSD": {
+                                      "type": "string",
+                                      "description": "Amount in USD"
+                                    },
+                                    "asset": {
+                                      "type": "object",
+                                      "required": [
+                                        "chainId",
+                                        "address",
+                                        "symbol",
+                                        "logo",
+                                        "decimals",
+                                        "price",
+                                        "type"
+                                      ],
+                                      "properties": {
+                                        "chainId": {
+                                          "type": "number",
+                                          "description": "Chain ID where the asset exists.",
+                                          "example": 8453
+                                        },
+                                        "address": {
+                                          "type": "string",
+                                          "description": "Contract address of the asset.",
+                                          "example": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+                                        },
+                                        "symbol": {
+                                          "type": "string",
+                                          "description": "Token symbol.",
+                                          "example": "cbBTC"
+                                        },
+                                        "logo": {
+                                          "type": "string",
+                                          "description": "URL to the asset logo.",
+                                          "example": "https://static.debank.com/image/base_token/logo_url/0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf/a4ae837a6ca2fc45f07a74898cc4ba45.png"
+                                        },
+                                        "decimals": {
+                                          "type": "number",
+                                          "description": "Number of decimals for the asset.",
+                                          "example": 8
+                                        },
+                                        "price": {
+                                          "type": "string",
+                                          "description": "Current price of the asset in USD.",
+                                          "example": "84152"
+                                        },
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [
+                                            "NATIVE",
+                                            "ERC20",
+                                            "ERC721",
+                                            "ERC1155"
+                                          ],
+                                          "description": "Type of the asset.",
+                                          "example": "ERC20"
+                                        },
+                                        "provider": {
+                                          "type": "object",
+                                          "required": ["id", "name", "logo"],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string",
+                                              "description": "Unique identifier for the provider.",
+                                              "example": "openeden"
+                                            },
+                                            "name": {
+                                              "type": "string",
+                                              "description": "Name of the provider.",
+                                              "example": "Open Eden"
+                                            },
+                                            "logo": {
+                                              "type": "string",
+                                              "description": "URL to the provider logo.",
+                                              "example": "https://app.openeden.com/tbill/favicons/favicon.svg"
+                                            }
+                                          }
+                                        },
+                                        "underlyingAssets": {
+                                          "type": "array",
+                                          "description": "List of underlying assets.",
+                                          "items": {
+                                            "type": "object",
+                                            "required": [
+                                              "chainId",
+                                              "address",
+                                              "symbol",
+                                              "name",
+                                              "logo",
+                                              "decimals"
+                                            ],
+                                            "properties": {
+                                              "chainId": {
+                                                "type": "number",
+                                                "description": "Chain ID of the underlying token.",
+                                                "example": 8453
+                                              },
+                                              "address": {
+                                                "type": "string",
+                                                "description": "Contract address of the underlying token.",
+                                                "example": "0x4200000000000000000000000000000000000006"
+                                              },
+                                              "name": {
+                                                "type": "string",
+                                                "description": "Name of the underlying token.",
+                                                "example": "Wrapped Ether"
+                                              },
+                                              "symbol": {
+                                                "type": "string",
+                                                "description": "Symbol of the underlying token.",
+                                                "example": "WETH"
+                                              },
+                                              "decimals": {
+                                                "type": "number",
+                                                "description": "Number of decimals for the underlying token.",
+                                                "example": 18
+                                              },
+                                              "logo": {
+                                                "type": "string",
+                                                "description": "URL to the underlying token logo.",
+                                                "example": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "output": {
+                                "type": "array",
+                                "description": "Output details",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "type": "string",
+                                      "description": "Amount in decimal format"
+                                    },
+                                    "minReturn": {
+                                      "type": "string",
+                                      "description": "Minimum return amount after slippage"
+                                    },
+                                    "amountUSD": {
+                                      "type": "string",
+                                      "description": "Amount in USD"
+                                    },
+                                    "dust": {
+                                      "type": "boolean",
+                                      "description": "Indicates if the amount is dust (very small)"
+                                    },
+                                    "asset": {
+                                      "type": "object",
+                                      "required": [
+                                        "chainId",
+                                        "address",
+                                        "symbol",
+                                        "logo",
+                                        "decimals",
+                                        "price",
+                                        "type"
+                                      ],
+                                      "properties": {
+                                        "chainId": {
+                                          "type": "number",
+                                          "description": "Chain ID where the asset exists.",
+                                          "example": 8453
+                                        },
+                                        "address": {
+                                          "type": "string",
+                                          "description": "Contract address of the asset.",
+                                          "example": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+                                        },
+                                        "symbol": {
+                                          "type": "string",
+                                          "description": "Token symbol.",
+                                          "example": "cbBTC"
+                                        },
+                                        "logo": {
+                                          "type": "string",
+                                          "description": "URL to the asset logo.",
+                                          "example": "https://static.debank.com/image/base_token/logo_url/0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf/a4ae837a6ca2fc45f07a74898cc4ba45.png"
+                                        },
+                                        "decimals": {
+                                          "type": "number",
+                                          "description": "Number of decimals for the asset.",
+                                          "example": 8
+                                        },
+                                        "price": {
+                                          "type": "string",
+                                          "description": "Current price of the asset in USD.",
+                                          "example": "84152"
+                                        },
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [
+                                            "NATIVE",
+                                            "ERC20",
+                                            "ERC721",
+                                            "ERC1155"
+                                          ],
+                                          "description": "Type of the asset.",
+                                          "example": "ERC20"
+                                        },
+                                        "provider": {
+                                          "type": "object",
+                                          "required": ["id", "name", "logo"],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string",
+                                              "description": "Unique identifier for the provider.",
+                                              "example": "openeden"
+                                            },
+                                            "name": {
+                                              "type": "string",
+                                              "description": "Name of the provider.",
+                                              "example": "Open Eden"
+                                            },
+                                            "logo": {
+                                              "type": "string",
+                                              "description": "URL to the provider logo.",
+                                              "example": "https://app.openeden.com/tbill/favicons/favicon.svg"
+                                            }
+                                          }
+                                        },
+                                        "underlyingAssets": {
+                                          "type": "array",
+                                          "description": "List of underlying assets.",
+                                          "items": {
+                                            "type": "object",
+                                            "required": [
+                                              "chainId",
+                                              "address",
+                                              "symbol",
+                                              "name",
+                                              "logo",
+                                              "decimals"
+                                            ],
+                                            "properties": {
+                                              "chainId": {
+                                                "type": "number",
+                                                "description": "Chain ID of the underlying token.",
+                                                "example": 8453
+                                              },
+                                              "address": {
+                                                "type": "string",
+                                                "description": "Contract address of the underlying token.",
+                                                "example": "0x4200000000000000000000000000000000000006"
+                                              },
+                                              "name": {
+                                                "type": "string",
+                                                "description": "Name of the underlying token.",
+                                                "example": "Wrapped Ether"
+                                              },
+                                              "symbol": {
+                                                "type": "string",
+                                                "description": "Symbol of the underlying token.",
+                                                "example": "WETH"
+                                              },
+                                              "decimals": {
+                                                "type": "number",
+                                                "description": "Number of decimals for the underlying token.",
+                                                "example": 18
+                                              },
+                                              "logo": {
+                                                "type": "string",
+                                                "description": "URL to the underlying token logo.",
+                                                "example": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "example": {
+                    "status": "success",
+                    "data": {
+                      "amountOut": "0",
+                      "approvalData": {
+                        "callTo": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                        "approveTo": "0x1d46863e3592745008b5CbbAC12014F67329A9b8",
+                        "amount": "1680715"
+                      },
+                      "path": [
+                        {
+                          "action": "swap",
+                          "protocol": {
+                            "id": "dzap",
+                            "name": "Dzap Aggregator",
+                            "icon": "https://dzap.io/favicon.ico"
+                          },
+                          "input": [
+                            {
+                              "amount": "1680715",
+                              "amountUSD": "1.68072",
+                              "asset": {
+                                "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                                "chainId": 8453,
+                                "decimals": 6,
+                                "logo": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png",
+                                "price": "1",
+                                "symbol": "USDC",
+                                "name": "USD Coin",
+                                "type": "ERC20"
+                              }
+                            }
+                          ],
+                          "output": [
+                            {
+                              "amount": "918943376897193",
+                              "minReturn": "918024433520296",
+                              "amountUSD": "1.68295",
+                              "asset": {
+                                "address": "0x4200000000000000000000000000000000000006",
+                                "chainId": 8453,
+                                "decimals": 18,
+                                "logo": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png",
+                                "price": "1831.4",
+                                "symbol": "WETH",
+                                "name": "Wrapped Ether",
+                                "type": "ERC20"
+                              }
+                            }
+                          ],
+                          "fee": [],
+                          "estimatedDuration": 10,
+                          "dust": []
+                        },
+                        {
+                          "action": "deposit",
+                          "protocol": {
+                            "id": "uniswap",
+                            "name": "Uniswap V3",
+                            "icon": "https://app.uniswap.org/favicon.png"
+                          },
+                          "input": [
+                            {
+                              "amount": "917721515538050",
+                              "amountUSD": "1.68072",
+                              "asset": {
+                                "address": "0x4200000000000000000000000000000000000006",
+                                "chainId": 8453,
+                                "decimals": 18,
+                                "logo": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png",
+                                "price": "1831.4",
+                                "symbol": "WETH",
+                                "name": "Wrapped Ether",
+                                "type": "ERC20"
+                              }
+                            },
+                            {
+                              "amount": "3319285",
+                              "amountUSD": "3.31929",
+                              "asset": {
+                                "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                                "chainId": 8453,
+                                "decimals": 6,
+                                "logo": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png",
+                                "price": "1",
+                                "symbol": "USDC",
+                                "name": "USD Coin",
+                                "type": "ERC20"
+                              }
+                            }
+                          ],
+                          "output": [
+                            {
+                              "amount": "0",
+                              "minReturn": "0",
+                              "amountUSD": "0.00000",
+                              "asset": {
+                                "address": "0xd0b53D9277642d899DF5C87A3966A349A798F224",
+                                "chainId": 8453,
+                                "decimals": 18,
+                                "logo": "https://app.uniswap.org/favicon.png",
+                                "price": "0",
+                                "symbol": "Wrapped Ether/USD Coin",
+                                "name": "Wrapped Ether/USD Coin v3 0.05%",
+                                "type": "ERC721"
+                              }
+                            }
+                          ],
+                          "fee": [
+                            {
+                              "amount": "9177215155380",
+                              "amountUSD": "0.01681",
+                              "asset": {
+                                "address": "0x4200000000000000000000000000000000000006",
+                                "chainId": 8453,
+                                "decimals": 18,
+                                "logo": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png",
+                                "price": "1831.4",
+                                "symbol": "WETH",
+                                "name": "Wrapped Ether",
+                                "type": "ERC20"
+                              }
+                            },
+                            {
+                              "amount": "33192",
+                              "amountUSD": "0.03319",
+                              "asset": {
+                                "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                                "chainId": 8453,
+                                "decimals": 6,
+                                "logo": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png",
+                                "price": "1",
+                                "symbol": "USDC",
+                                "name": "USD Coin",
+                                "type": "ERC20"
+                              }
+                            }
+                          ],
+                          "estimatedDuration": 10,
+                          "dust": [
+                            {
+                              "amount": "302917982246",
+                              "minReturn": "302917982246",
+                              "amountUSD": "0.00055",
+                              "dust": true,
+                              "asset": {
+                                "address": "0x4200000000000000000000000000000000000006",
+                                "chainId": 8453,
+                                "decimals": 18,
+                                "logo": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png",
+                                "price": "1831.4",
+                                "symbol": "WETH",
+                                "type": "ERC20",
+                                "name": "Wrapped Ether"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/v1/buildTx": {
+      "post": {
+        "tags": ["Build Txn"],
+        "summary": "Build a zap transaction",
+        "description": "Construct a transaction for zapping tokens across chains. Supports optional parameters for adding or removing liquidity.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "srcToken",
+                  "srcChainId",
+                  "destToken",
+                  "destChainId",
+                  "recipient",
+                  "slippage",
+                  "account"
+                ],
+                "properties": {
+                  "srcToken": {
+                    "type": "string",
+                    "description": "Source token address",
+                    "example": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+                  },
+                  "srcChainId": {
+                    "type": "integer",
+                    "description": "Source chain ID",
+                    "example": 8453
+                  },
+                  "destToken": {
+                    "type": "string",
+                    "description": "Destination token address",
+                    "example": "0x4C36388bE6F416A29C8d8Eee81C771cE6bE14B18"
+                  },
+                  "destChainId": {
+                    "type": "integer",
+                    "description": "Destination chain ID",
+                    "example": 8453
+                  },
+                  "amount": {
+                    "type": "string",
+                    "description": "Amount to swap or liquidity to add/remove (optional)",
+                    "example": "5000000"
+                  },
+                  "recipient": {
+                    "type": "string",
+                    "description": "Recipient address for the swapped tokens",
+                    "example": "0x99BCEBf44433E901597D9fCb16E799a4847519f6"
+                  },
+                  "slippage": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "Slippage tolerance in percentage",
+                    "example": 0.5
+                  },
+                  "account": {
+                    "type": "string",
+                    "description": "Account address initiating the swap",
+                    "example": "0x99BCEBf44433E901597D9fCb16E799a4847519f6"
+                  },
+                  "estimateGas": {
+                    "type": "boolean",
+                    "description": "Estimates gas and simulates the transaction, defaults to false (optional)",
+                    "example": false
+                  },
+                  "permit": {
+                    "type": "string",
+                    "description": "Encoded permit2 data for ERC20 tokens (optional)"
+                  },
+                  "positionDetails": {
+                    "type": "object",
+                    "description": "Optional position details for NFT-related operations",
+                    "properties": {
+                      "nftId": {
+                        "type": "string",
+                        "description": "NFT ID associated with the swap"
+                      }
+                    }
+                  },
+                  "poolDetails": {
+                    "type": "object",
+                    "description": "Optional pool details for liquidity operations",
+                    "properties": {
+                      "lowerTick": {
+                        "type": "integer",
+                        "description": "Lower tick for liquidity range"
+                      },
+                      "upperTick": {
+                        "type": "integer",
+                        "description": "Upper tick for liquidity range"
+                      }
+                    }
+                  },
+                  "allowedBridges": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "description": "List of allowed bridge protocols"
+                    },
+                    "description": "Optional list of allowed bridges for the swap"
+                  },
+                  "allowedDexes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "description": "List of allowed swap protocols"
+                    },
+                    "description": "Optional list of allowed swap protocols for the swap"
+                  }
+                },
+                "example": {
+                  "srcToken": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                  "srcChainId": 8453,
+                  "destToken": "0xd0b53D9277642d899DF5C87A3966A349A798F224",
+                  "destChainId": 8453,
+                  "amount": "5000000",
+                  "recipient": "0x99BCEBf44433E901597D9fCb16E799a4847519f6",
+                  "slippage": 0.5,
+                  "account": "0x99BCEBf44433E901597D9fCb16E799a4847519f6",
+                  "estimateGas": false,
+                  "positionDetails": {},
+                  "poolDetails": {}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response with Path information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "description": "Indicates whether the operation was successful"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "Path information or additional details",
+                      "properties": {
+                        "amountOut": {
+                          "type": "string",
+                          "description": "Estimated output amount after the zap"
+                        },
+                        "approvalData": {
+                          "type": "object",
+                          "description": "Approval data if required for the transaction",
+                          "properties": {
+                            "approveTo": {
+                              "type": "string",
+                              "description": "Address to approve for spending the token"
+                            },
+                            "callTo": {
+                              "type": "string",
+                              "description": "Address to call for the approval"
+                            },
+                            "amount": {
+                              "type": "string",
+                              "description": "Amount to approve in decimal format"
+                            },
+                            "tokenId": {
+                              "type": "string",
+                              "description": "Token ID if applicable (for NFTs)"
+                            }
+                          }
+                        },
+                        "path": {
+                          "type": "array",
+                          "description": "List of steps in the path",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "action": {
+                                "type": "string",
+                                "description": "Action type (e.g., swap, bridge, deposit)"
+                              },
+                              "protocol": {
+                                "type": "object",
+                                "description": "Protocol details for the action",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "description": "Protocol ID"
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "description": "Protocol name"
+                                  },
+                                  "icon": {
+                                    "type": "string",
+                                    "description": "Protocol icon URL"
+                                  }
+                                }
+                              },
+                              "estimatedDuration": {
+                                "type": "number",
+                                "description": "Estimated duration for the action in seconds"
+                              },
+                              "fee": {
+                                "type": "array",
+                                "description": "Fee details for the action",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "type": "string",
+                                      "description": "Fee amount in decimal format"
+                                    },
+                                    "amountUSD": {
+                                      "type": "string",
+                                      "description": "Fee amount in USD"
+                                    },
+                                    "included": {
+                                      "type": "boolean",
+                                      "description": "Indicates if the fee is included in the amount or is charged separately from user balance"
+                                    },
+                                    "asset": {
+                                      "type": "object",
+                                      "required": [
+                                        "chainId",
+                                        "address",
+                                        "symbol",
+                                        "logo",
+                                        "decimals",
+                                        "price",
+                                        "type"
+                                      ],
+                                      "properties": {
+                                        "chainId": {
+                                          "type": "number",
+                                          "description": "Chain ID where the asset exists.",
+                                          "example": 8453
+                                        },
+                                        "address": {
+                                          "type": "string",
+                                          "description": "Contract address of the asset.",
+                                          "example": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+                                        },
+                                        "symbol": {
+                                          "type": "string",
+                                          "description": "Token symbol.",
+                                          "example": "cbBTC"
+                                        },
+                                        "logo": {
+                                          "type": "string",
+                                          "description": "URL to the asset logo.",
+                                          "example": "https://static.debank.com/image/base_token/logo_url/0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf/a4ae837a6ca2fc45f07a74898cc4ba45.png"
+                                        },
+                                        "decimals": {
+                                          "type": "number",
+                                          "description": "Number of decimals for the asset.",
+                                          "example": 8
+                                        },
+                                        "price": {
+                                          "type": "string",
+                                          "description": "Current price of the asset in USD.",
+                                          "example": "84152"
+                                        },
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [
+                                            "NATIVE",
+                                            "ERC20",
+                                            "ERC721",
+                                            "ERC1155"
+                                          ],
+                                          "description": "Type of the asset.",
+                                          "example": "ERC20"
+                                        },
+                                        "provider": {
+                                          "type": "object",
+                                          "required": ["id", "name", "logo"],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string",
+                                              "description": "Unique identifier for the provider.",
+                                              "example": "openeden"
+                                            },
+                                            "name": {
+                                              "type": "string",
+                                              "description": "Name of the provider.",
+                                              "example": "Open Eden"
+                                            },
+                                            "logo": {
+                                              "type": "string",
+                                              "description": "URL to the provider logo.",
+                                              "example": "https://app.openeden.com/tbill/favicons/favicon.svg"
+                                            }
+                                          }
+                                        },
+                                        "underlyingAssets": {
+                                          "type": "array",
+                                          "description": "List of underlying assets.",
+                                          "items": {
+                                            "type": "object",
+                                            "required": [
+                                              "chainId",
+                                              "address",
+                                              "symbol",
+                                              "name",
+                                              "logo",
+                                              "decimals"
+                                            ],
+                                            "properties": {
+                                              "chainId": {
+                                                "type": "number",
+                                                "description": "Chain ID of the underlying token.",
+                                                "example": 8453
+                                              },
+                                              "address": {
+                                                "type": "string",
+                                                "description": "Contract address of the underlying token.",
+                                                "example": "0x4200000000000000000000000000000000000006"
+                                              },
+                                              "name": {
+                                                "type": "string",
+                                                "description": "Name of the underlying token.",
+                                                "example": "Wrapped Ether"
+                                              },
+                                              "symbol": {
+                                                "type": "string",
+                                                "description": "Symbol of the underlying token.",
+                                                "example": "WETH"
+                                              },
+                                              "decimals": {
+                                                "type": "number",
+                                                "description": "Number of decimals for the underlying token.",
+                                                "example": 18
+                                              },
+                                              "logo": {
+                                                "type": "string",
+                                                "description": "URL to the underlying token logo.",
+                                                "example": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "input": {
+                                "type": "array",
+                                "description": "Input details",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "type": "string",
+                                      "description": "Amount in decimals format"
+                                    },
+                                    "amountUSD": {
+                                      "type": "string",
+                                      "description": "Amount in USD"
+                                    },
+                                    "asset": {
+                                      "type": "object",
+                                      "required": [
+                                        "chainId",
+                                        "address",
+                                        "symbol",
+                                        "logo",
+                                        "decimals",
+                                        "price",
+                                        "type"
+                                      ],
+                                      "properties": {
+                                        "chainId": {
+                                          "type": "number",
+                                          "description": "Chain ID where the asset exists.",
+                                          "example": 8453
+                                        },
+                                        "address": {
+                                          "type": "string",
+                                          "description": "Contract address of the asset.",
+                                          "example": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+                                        },
+                                        "symbol": {
+                                          "type": "string",
+                                          "description": "Token symbol.",
+                                          "example": "cbBTC"
+                                        },
+                                        "logo": {
+                                          "type": "string",
+                                          "description": "URL to the asset logo.",
+                                          "example": "https://static.debank.com/image/base_token/logo_url/0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf/a4ae837a6ca2fc45f07a74898cc4ba45.png"
+                                        },
+                                        "decimals": {
+                                          "type": "number",
+                                          "description": "Number of decimals for the asset.",
+                                          "example": 8
+                                        },
+                                        "price": {
+                                          "type": "string",
+                                          "description": "Current price of the asset in USD.",
+                                          "example": "84152"
+                                        },
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [
+                                            "NATIVE",
+                                            "ERC20",
+                                            "ERC721",
+                                            "ERC1155"
+                                          ],
+                                          "description": "Type of the asset.",
+                                          "example": "ERC20"
+                                        },
+                                        "provider": {
+                                          "type": "object",
+                                          "required": ["id", "name", "logo"],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string",
+                                              "description": "Unique identifier for the provider.",
+                                              "example": "openeden"
+                                            },
+                                            "name": {
+                                              "type": "string",
+                                              "description": "Name of the provider.",
+                                              "example": "Open Eden"
+                                            },
+                                            "logo": {
+                                              "type": "string",
+                                              "description": "URL to the provider logo.",
+                                              "example": "https://app.openeden.com/tbill/favicons/favicon.svg"
+                                            }
+                                          }
+                                        },
+                                        "underlyingAssets": {
+                                          "type": "array",
+                                          "description": "List of underlying assets.",
+                                          "items": {
+                                            "type": "object",
+                                            "required": [
+                                              "chainId",
+                                              "address",
+                                              "symbol",
+                                              "name",
+                                              "logo",
+                                              "decimals"
+                                            ],
+                                            "properties": {
+                                              "chainId": {
+                                                "type": "number",
+                                                "description": "Chain ID of the underlying token.",
+                                                "example": 8453
+                                              },
+                                              "address": {
+                                                "type": "string",
+                                                "description": "Contract address of the underlying token.",
+                                                "example": "0x4200000000000000000000000000000000000006"
+                                              },
+                                              "name": {
+                                                "type": "string",
+                                                "description": "Name of the underlying token.",
+                                                "example": "Wrapped Ether"
+                                              },
+                                              "symbol": {
+                                                "type": "string",
+                                                "description": "Symbol of the underlying token.",
+                                                "example": "WETH"
+                                              },
+                                              "decimals": {
+                                                "type": "number",
+                                                "description": "Number of decimals for the underlying token.",
+                                                "example": 18
+                                              },
+                                              "logo": {
+                                                "type": "string",
+                                                "description": "URL to the underlying token logo.",
+                                                "example": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "output": {
+                                "type": "array",
+                                "description": "Output details",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "type": "string",
+                                      "description": "Amount in decimal format"
+                                    },
+                                    "minReturn": {
+                                      "type": "string",
+                                      "description": "Minimum return amount after slippage"
+                                    },
+                                    "amountUSD": {
+                                      "type": "string",
+                                      "description": "Amount in USD"
+                                    },
+                                    "dust": {
+                                      "type": "boolean",
+                                      "description": "Indicates if the amount is dust (very small)"
+                                    },
+                                    "asset": {
+                                      "type": "object",
+                                      "required": [
+                                        "chainId",
+                                        "address",
+                                        "symbol",
+                                        "logo",
+                                        "decimals",
+                                        "price",
+                                        "type"
+                                      ],
+                                      "properties": {
+                                        "chainId": {
+                                          "type": "number",
+                                          "description": "Chain ID where the asset exists.",
+                                          "example": 8453
+                                        },
+                                        "address": {
+                                          "type": "string",
+                                          "description": "Contract address of the asset.",
+                                          "example": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+                                        },
+                                        "symbol": {
+                                          "type": "string",
+                                          "description": "Token symbol.",
+                                          "example": "cbBTC"
+                                        },
+                                        "logo": {
+                                          "type": "string",
+                                          "description": "URL to the asset logo.",
+                                          "example": "https://static.debank.com/image/base_token/logo_url/0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf/a4ae837a6ca2fc45f07a74898cc4ba45.png"
+                                        },
+                                        "decimals": {
+                                          "type": "number",
+                                          "description": "Number of decimals for the asset.",
+                                          "example": 8
+                                        },
+                                        "price": {
+                                          "type": "string",
+                                          "description": "Current price of the asset in USD.",
+                                          "example": "84152"
+                                        },
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [
+                                            "NATIVE",
+                                            "ERC20",
+                                            "ERC721",
+                                            "ERC1155"
+                                          ],
+                                          "description": "Type of the asset.",
+                                          "example": "ERC20"
+                                        },
+                                        "provider": {
+                                          "type": "object",
+                                          "required": ["id", "name", "logo"],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string",
+                                              "description": "Unique identifier for the provider.",
+                                              "example": "openeden"
+                                            },
+                                            "name": {
+                                              "type": "string",
+                                              "description": "Name of the provider.",
+                                              "example": "Open Eden"
+                                            },
+                                            "logo": {
+                                              "type": "string",
+                                              "description": "URL to the provider logo.",
+                                              "example": "https://app.openeden.com/tbill/favicons/favicon.svg"
+                                            }
+                                          }
+                                        },
+                                        "underlyingAssets": {
+                                          "type": "array",
+                                          "description": "List of underlying assets.",
+                                          "items": {
+                                            "type": "object",
+                                            "required": [
+                                              "chainId",
+                                              "address",
+                                              "symbol",
+                                              "name",
+                                              "logo",
+                                              "decimals"
+                                            ],
+                                            "properties": {
+                                              "chainId": {
+                                                "type": "number",
+                                                "description": "Chain ID of the underlying token.",
+                                                "example": 8453
+                                              },
+                                              "address": {
+                                                "type": "string",
+                                                "description": "Contract address of the underlying token.",
+                                                "example": "0x4200000000000000000000000000000000000006"
+                                              },
+                                              "name": {
+                                                "type": "string",
+                                                "description": "Name of the underlying token.",
+                                                "example": "Wrapped Ether"
+                                              },
+                                              "symbol": {
+                                                "type": "string",
+                                                "description": "Symbol of the underlying token.",
+                                                "example": "WETH"
+                                              },
+                                              "decimals": {
+                                                "type": "number",
+                                                "description": "Number of decimals for the underlying token.",
+                                                "example": 18
+                                              },
+                                              "logo": {
+                                                "type": "string",
+                                                "description": "URL to the underlying token logo.",
+                                                "example": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "steps": {
+                          "type": "array",
+                          "description": "Required steps to complete the transaction",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "action": {
+                                "type": "string",
+                                "description": "Step action (e.g., execute, sign)"
+                              },
+                              "data": {
+                                "type": "object",
+                                "properties": {
+                                  "callData": {
+                                    "type": "string",
+                                    "description": "Encoded call data for the transaction"
+                                  },
+                                  "callTo": {
+                                    "type": "string",
+                                    "description": "Address to call for the transaction"
+                                  },
+                                  "estimatedGas": {
+                                    "type": "string",
+                                    "description": "Estimated gas for the transaction"
+                                  },
+                                  "txnId": {
+                                    "type": "string",
+                                    "description": "Transaction ID for tracking"
+                                  },
+                                  "value": {
+                                    "type": "string",
+                                    "description": "Value in wei to send with the transaction"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "example": {
+                    "status": "success",
+                    "data": {
+                      "amountOut": "918943376897193",
+                      "approvalData": {
+                        "callTo": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                        "approveTo": "0x1d46863e3592745008b5CbbAC12014F67329A9b8",
+                        "amount": "1680715"
+                      },
+                      "path": [
+                        {
+                          "action": "swap",
+                          "protocol": {
+                            "id": "dzap",
+                            "name": "Dzap Aggregator",
+                            "icon": "https://dzap.io/favicon.ico"
+                          },
+                          "input": [
+                            {
+                              "amount": "1680715",
+                              "amountUSD": "1.68072",
+                              "asset": {
+                                "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                                "chainId": 8453,
+                                "decimals": 6,
+                                "logo": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png",
+                                "price": "1",
+                                "symbol": "USDC",
+                                "name": "USD Coin",
+                                "type": "ERC20"
+                              }
+                            }
+                          ],
+                          "output": [
+                            {
+                              "amount": "918943376897193",
+                              "minReturn": "918024433520296",
+                              "amountUSD": "1.68295",
+                              "asset": {
+                                "address": "0x4200000000000000000000000000000000000006",
+                                "chainId": 8453,
+                                "decimals": 18,
+                                "logo": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png",
+                                "price": "1831.4",
+                                "symbol": "WETH",
+                                "name": "Wrapped Ether",
+                                "type": "ERC20"
+                              }
+                            }
+                          ],
+                          "fee": [],
+                          "estimatedDuration": 10,
+                          "dust": []
+                        },
+                        {
+                          "action": "deposit",
+                          "protocol": {
+                            "id": "uniswap",
+                            "name": "Uniswap",
+                            "icon": "https://app.uniswap.org/favicon.png"
+                          },
+                          "input": [
+                            {
+                              "amount": "917721515538050",
+                              "amountUSD": "1.68072",
+                              "asset": {
+                                "address": "0x4200000000000000000000000000000000000006",
+                                "chainId": 8453,
+                                "decimals": 18,
+                                "logo": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png",
+                                "price": "1831.4",
+                                "symbol": "WETH",
+                                "name": "Wrapped Ether",
+                                "type": "ERC20"
+                              }
+                            },
+                            {
+                              "amount": "3319285",
+                              "amountUSD": "3.31929",
+                              "asset": {
+                                "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                                "chainId": 8453,
+                                "decimals": 6,
+                                "logo": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png",
+                                "price": "1",
+                                "symbol": "USDC",
+                                "name": "USD Coin",
+                                "type": "ERC20"
+                              }
+                            }
+                          ],
+                          "output": [
+                            {
+                              "amount": "0",
+                              "minReturn": "0",
+                              "amountUSD": "0.00000",
+                              "asset": {
+                                "address": "0xd0b53D9277642d899DF5C87A3966A349A798F224",
+                                "chainId": 8453,
+                                "decimals": 18,
+                                "logo": "https://app.uniswap.org/favicon.png",
+                                "price": "0",
+                                "symbol": "Wrapped Ether/USD Coin",
+                                "name": "Wrapped Ether/USD Coin v3 0.05%",
+                                "type": "ERC721"
+                              }
+                            }
+                          ],
+                          "fee": [
+                            {
+                              "amount": "9177215155380",
+                              "amountUSD": "0.01681",
+                              "asset": {
+                                "address": "0x4200000000000000000000000000000000000006",
+                                "chainId": 8453,
+                                "decimals": 18,
+                                "logo": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png",
+                                "price": "1831.4",
+                                "symbol": "WETH",
+                                "name": "Wrapped Ether",
+                                "type": "ERC20"
+                              }
+                            },
+                            {
+                              "amount": "33192",
+                              "amountUSD": "0.03319",
+                              "asset": {
+                                "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                                "chainId": 8453,
+                                "decimals": 6,
+                                "logo": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png",
+                                "price": "1",
+                                "symbol": "USDC",
+                                "name": "USD Coin",
+                                "type": "ERC20"
+                              }
+                            }
+                          ],
+                          "estimatedDuration": 10,
+                          "dust": [
+                            {
+                              "amount": "302917982246",
+                              "minReturn": "302917982246",
+                              "amountUSD": "0.00055",
+                              "dust": true,
+                              "asset": {
+                                "address": "0x4200000000000000000000000000000000000006",
+                                "chainId": 8453,
+                                "decimals": 18,
+                                "logo": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png",
+                                "price": "1831.4",
+                                "symbol": "WETH",
+                                "type": "ERC20",
+                                "name": "Wrapped Ether"
+                              }
+                            }
+                          ]
+                        }
+                      ],
+                      "steps": [
+                        {
+                          "action": "execute",
+                          "data": {
+                            "txnId": "0x393942432d313966362d31373436363231343536353330000000000000000000",
+                            "callTo": "0x1d46863e3592745008b5CbbAC12014F67329A9b8",
+                            "callData": "0xb71610c4393942432d313966362d3137343636323134353635333000000000000000000000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000de000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e600000000000000000000000000000000000000000000000000000000000000f8000000000000000000000000099bcebf44433e901597d9fcb16e799a4847519f60000000000000000000000000000000000000000000000000000000000000ce00000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000034000000000000000000000000000000000000000000000000000000000000004400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913000000000000000000000000f708e11a7c94abde8f6217b13e6fe39c8b9cc0a6000000000000000000000000000000000000000000000000000000000019a54b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000420000000000000000000000000000000000000600000000000000000000000003a520b32c04bf3beef7beb72e919cf822ed34f1000000000000000000000000000000000000000000000000000342a9b0efb6820000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000003a520b32c04bf3beef7beb72e919cf822ed34f1000000000000000000000000000000000000000000000000000000000032a5f50000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000042000000000000000000000000000000000000060000000000000000000000001d46863e3592745008b5cbbac12014f67329a9b8000000000000000000000000000000000000000000000000000342f038414ea800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000620000000000000000000000000f708e11a7c94abde8f6217b13e6fe39c8b9cc0a600000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000004e46022b00b3078316434362d3239413962382d3137343636323134353837393100000000000000000000000000000000001d46863e3592745008b5cbbac12014f67329a9b80000000000000000000000000000000000000000000000000000000000000060000000000000000000000000ef42f78d25f4c681dcad2597fa04877ff802ef4b000000000000000000000000ef42f78d25f4c681dcad2597fa04877ff802ef4b000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda029130000000000000000000000004200000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000019a54b000000000000000000000000000000000000000000000000000342f038414ea80000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000002c473fc445700000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000277022400e01d46863e3592745008b5cbbac12014f67329a9b8833589fcd6edb6e08f4c7c32d4f71b54bda029134200000000000000000000000000000000000006e000d4c800d9f800e1e800e399ec4a8167630206d7ca0a5f9fdcd9a43a0c3db9985f26820685ec5b3e4dc7b710e4573205b861076a38861b0926a2eb292418ba80f00e8b5d4b8fa051308cff1c0000e0681b5540c8033f986314b6a3f800e819a54b060300e2128acb08000000000000000000000000fffd8963efd1fc6a506488495d951d5263988d2500000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000014833589fcd6edb6e08f4c7c32d4f71b54bda029130000000000000000000000000100ea0603008a0300e20400ee0080a3c2fb43c7445d8ff8bd93dac53d98bde744402000070a000000000000000000000000000000000000000000000000000000000000030191050000020070000206070706000000000000000000000000000000000000000000000000000000c80343c62d8c74a90301bb0500600301dc00020a0b00000000000000000000000000000000000000000000000000000000000301ed0500800301dceda49bce2f38d284f839be1f4f2e23e6c7cc7dbd0200700202170500a00005060708070000000000000000000000000000000000000000000000000000000302340500800301dc0500600200700200480500c002000000e600ea0000000040016e017d017d07002001b201b8000006002001b801bb000008002001e401ed0000070020020e02170000030000022b023400000800200255026100000300000261026a00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003a520b32c04bf3beef7beb72e919cf822ed34f100000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000164883164560000000000000000000000004200000000000000000000000000000000000006000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000001f4fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffcedfcfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffcee1000000000000000000000000000000000000000000000000000033a50f44979ce000000000000000000000000000000000000000000000000000000000032244d0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000099bcebf44433e901597d9fcb16e799a4847519f600000000000000000000000000000000000000000000000000000000681b622400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004116942205a523e344e6acc7b3e7146565c1ab36411fa34b2f131c3ade52e376633457201cb43dcc9b9aea911904ff072922438a8fccb9916f2c9597b6679d6e9c1b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000004c4b40000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda029130000000000000000000000004200000000000000000000000000000000000006",
+                            "value": "0",
+                            "estimatedGas": "0"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/v1/status": {
+      "get": {
+        "tags": ["Status"],
+        "summary": "Fetch Status for zap transaction",
+        "description": "Retrieve the status and details of a transaction based on its hash and chain ID.",
+        "parameters": [
+          {
+            "name": "txnHash",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "0x7828ac68a277bdf4ce7bca2f54555cdc289960f00fecf143bd82f160588bbc45"
+            },
+            "description": "Transaction hash to check the status for."
+          },
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "example": 8453
+            },
+            "description": "Chain ID where the transaction was executed."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response with transaction status and details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["status", "data"],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["success"],
+                      "description": "Response status."
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": ["status", "steps"],
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "PENDING",
+                            "COMPLETED",
+                            "FAILED",
+                            "REFUNDED"
+                          ],
+                          "description": "Overall transaction status.",
+                          "example": "COMPLETED"
+                        },
+                        "steps": {
+                          "type": "array",
+                          "description": "List of transaction steps.",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "chainId",
+                              "hash",
+                              "status",
+                              "input",
+                              "output",
+                              "action",
+                              "protocol"
+                            ],
+                            "properties": {
+                              "action": {
+                                "type": "string",
+                                "description": "Type of action performed in this step.",
+                                "example": "swap"
+                              },
+                              "protocol": {
+                                "type": "object",
+                                "description": "Protocol used for this step.",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "description": "Unique identifier for the protocol.",
+                                    "example": "balancer"
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "description": "Name of the protocol.",
+                                    "example": "Balancer"
+                                  },
+                                  "icon": {
+                                    "type": "string",
+                                    "description": "URL to the protocol icon.",
+                                    "example": "https://balancer.fi/favicon.ico"
+                                  }
+                                }
+                              },
+                              "chainId": {
+                                "type": "number",
+                                "description": "Chain ID where the step was executed.",
+                                "example": 8453
+                              },
+                              "hash": {
+                                "type": "string",
+                                "description": "Transaction hash for this step.",
+                                "example": "0x7828ac68a277bdf4ce7bca2f54555cdc289960f00fecf143bd82f160588bbc45"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": ["COMPLETED", "PENDING", "FAILED"],
+                                "description": "Status of this particular step.",
+                                "example": "COMPLETED"
+                              },
+                              "input": {
+                                "type": "array",
+                                "description": "Input assets used in the transaction.",
+                                "items": {
+                                  "type": "object",
+                                  "required": ["amount", "amountUSD", "asset"],
+                                  "properties": {
+                                    "amount": {
+                                      "type": "string",
+                                      "description": "Amount of the asset in its native decimal representation.",
+                                      "example": "204"
+                                    },
+                                    "amountUSD": {
+                                      "type": "string",
+                                      "description": "USD value of the amount.",
+                                      "example": "0.17167"
+                                    },
+                                    "asset": {
+                                      "type": "object",
+                                      "required": [
+                                        "chainId",
+                                        "address",
+                                        "symbol",
+                                        "logo",
+                                        "decimals",
+                                        "price",
+                                        "type"
+                                      ],
+                                      "properties": {
+                                        "chainId": {
+                                          "type": "number",
+                                          "description": "Chain ID where the asset exists.",
+                                          "example": 8453
+                                        },
+                                        "address": {
+                                          "type": "string",
+                                          "description": "Contract address of the asset.",
+                                          "example": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+                                        },
+                                        "symbol": {
+                                          "type": "string",
+                                          "description": "Token symbol.",
+                                          "example": "cbBTC"
+                                        },
+                                        "logo": {
+                                          "type": "string",
+                                          "description": "URL to the asset logo.",
+                                          "example": "https://static.debank.com/image/base_token/logo_url/0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf/a4ae837a6ca2fc45f07a74898cc4ba45.png"
+                                        },
+                                        "decimals": {
+                                          "type": "number",
+                                          "description": "Number of decimals for the asset.",
+                                          "example": 8
+                                        },
+                                        "price": {
+                                          "type": "string",
+                                          "description": "Current price of the asset in USD.",
+                                          "example": "84152"
+                                        },
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [
+                                            "NATIVE",
+                                            "ERC20",
+                                            "ERC721",
+                                            "ERC1155"
+                                          ],
+                                          "description": "Type of the asset.",
+                                          "example": "ERC20"
+                                        },
+                                        "provider": {
+                                          "type": "object",
+                                          "required": ["id", "name", "logo"],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string",
+                                              "description": "Unique identifier for the provider.",
+                                              "example": "openeden"
+                                            },
+                                            "name": {
+                                              "type": "string",
+                                              "description": "Name of the provider.",
+                                              "example": "Open Eden"
+                                            },
+                                            "logo": {
+                                              "type": "string",
+                                              "description": "URL to the provider logo.",
+                                              "example": "https://app.openeden.com/tbill/favicons/favicon.svg"
+                                            }
+                                          }
+                                        },
+                                        "underlyingAssets": {
+                                          "type": "array",
+                                          "description": "List of underlying assets.",
+                                          "items": {
+                                            "type": "object",
+                                            "required": [
+                                              "chainId",
+                                              "address",
+                                              "symbol",
+                                              "name",
+                                              "logo",
+                                              "decimals"
+                                            ],
+                                            "properties": {
+                                              "chainId": {
+                                                "type": "number",
+                                                "description": "Chain ID of the underlying token.",
+                                                "example": 8453
+                                              },
+                                              "address": {
+                                                "type": "string",
+                                                "description": "Contract address of the underlying token.",
+                                                "example": "0x4200000000000000000000000000000000000006"
+                                              },
+                                              "name": {
+                                                "type": "string",
+                                                "description": "Name of the underlying token.",
+                                                "example": "Wrapped Ether"
+                                              },
+                                              "symbol": {
+                                                "type": "string",
+                                                "description": "Symbol of the underlying token.",
+                                                "example": "WETH"
+                                              },
+                                              "decimals": {
+                                                "type": "number",
+                                                "description": "Number of decimals for the underlying token.",
+                                                "example": 18
+                                              },
+                                              "logo": {
+                                                "type": "string",
+                                                "description": "URL to the underlying token logo.",
+                                                "example": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "output": {
+                                "type": "array",
+                                "description": "Output assets received from the transaction.",
+                                "items": {
+                                  "type": "object",
+                                  "required": ["amount", "amountUSD", "asset"],
+                                  "properties": {
+                                    "amount": {
+                                      "type": "string",
+                                      "description": "Amount of the asset in its native decimal representation.",
+                                      "example": "204"
+                                    },
+                                    "amountUSD": {
+                                      "type": "string",
+                                      "description": "USD value of the amount.",
+                                      "example": "0.17167"
+                                    },
+                                    "asset": {
+                                      "type": "object",
+                                      "required": [
+                                        "chainId",
+                                        "address",
+                                        "symbol",
+                                        "logo",
+                                        "decimals",
+                                        "price",
+                                        "type"
+                                      ],
+                                      "properties": {
+                                        "chainId": {
+                                          "type": "number",
+                                          "description": "Chain ID where the asset exists.",
+                                          "example": 8453
+                                        },
+                                        "address": {
+                                          "type": "string",
+                                          "description": "Contract address of the asset.",
+                                          "example": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+                                        },
+                                        "symbol": {
+                                          "type": "string",
+                                          "description": "Token symbol.",
+                                          "example": "cbBTC"
+                                        },
+                                        "logo": {
+                                          "type": "string",
+                                          "description": "URL to the asset logo.",
+                                          "example": "https://static.debank.com/image/base_token/logo_url/0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf/a4ae837a6ca2fc45f07a74898cc4ba45.png"
+                                        },
+                                        "decimals": {
+                                          "type": "number",
+                                          "description": "Number of decimals for the asset.",
+                                          "example": 8
+                                        },
+                                        "price": {
+                                          "type": "string",
+                                          "description": "Current price of the asset in USD.",
+                                          "example": "84152"
+                                        },
+                                        "type": {
+                                          "type": "string",
+                                          "enum": [
+                                            "NATIVE",
+                                            "ERC20",
+                                            "ERC721",
+                                            "ERC1155"
+                                          ],
+                                          "description": "Type of the asset.",
+                                          "example": "ERC20"
+                                        },
+                                        "provider": {
+                                          "type": "object",
+                                          "required": ["id", "name", "logo"],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string",
+                                              "description": "Unique identifier for the provider.",
+                                              "example": "openeden"
+                                            },
+                                            "name": {
+                                              "type": "string",
+                                              "description": "Name of the provider.",
+                                              "example": "Open Eden"
+                                            },
+                                            "logo": {
+                                              "type": "string",
+                                              "description": "URL to the provider logo.",
+                                              "example": "https://app.openeden.com/tbill/favicons/favicon.svg"
+                                            }
+                                          }
+                                        },
+                                        "underlyingAssets": {
+                                          "type": "array",
+                                          "description": "List of underlying assets.",
+                                          "items": {
+                                            "type": "object",
+                                            "required": [
+                                              "chainId",
+                                              "address",
+                                              "symbol",
+                                              "name",
+                                              "logo",
+                                              "decimals"
+                                            ],
+                                            "properties": {
+                                              "chainId": {
+                                                "type": "number",
+                                                "description": "Chain ID of the underlying token.",
+                                                "example": 8453
+                                              },
+                                              "address": {
+                                                "type": "string",
+                                                "description": "Contract address of the underlying token.",
+                                                "example": "0x4200000000000000000000000000000000000006"
+                                              },
+                                              "name": {
+                                                "type": "string",
+                                                "description": "Name of the underlying token.",
+                                                "example": "Wrapped Ether"
+                                              },
+                                              "symbol": {
+                                                "type": "string",
+                                                "description": "Symbol of the underlying token.",
+                                                "example": "WETH"
+                                              },
+                                              "decimals": {
+                                                "type": "number",
+                                                "description": "Number of decimals for the underlying token.",
+                                                "example": 18
+                                              },
+                                              "logo": {
+                                                "type": "string",
+                                                "description": "URL to the underlying token logo.",
+                                                "example": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "example": {
+                        "status": "COMPLETED",
+                        "steps": [
+                          {
+                            "chainId": 8453,
+                            "hash": "0x7828ac68a277bdf4ce7bca2f54555cdc289960f00fecf143bd82f160588bbc45",
+                            "status": "COMPLETED",
+                            "action": "swap",
+                            "input": [
+                              {
+                                "amount": "204",
+                                "amountUSD": "0.19227",
+                                "asset": {
+                                  "chainId": 8453,
+                                  "type": "ERC20",
+                                  "symbol": "cbBTC",
+                                  "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+                                  "name": "Coinbase Wrapped BTC",
+                                  "decimals": 8
+                                }
+                              }
+                            ],
+                            "output": [
+                              {
+                                "amount": "70886351050880",
+                                "amountUSD": "0",
+                                "asset": {
+                                  "chainId": 8453,
+                                  "type": "ERC20",
+                                  "symbol": "rETH-WETH-BPT",
+                                  "address": "0xC771c1a5905420DAEc317b154EB13e4198BA97D0",
+                                  "name": "Balancer rETH-WETH Stable Pool",
+                                  "decimals": 18,
+                                  "provider": {
+                                    "name": "Balancer",
+                                    "id": "balancer",
+                                    "logo": "https://balancer.fi/favicon.ico"
+                                  },
+                                  "underlyingTokens": [
+                                    {
+                                      "chainId": 8453,
+                                      "address": "0x4200000000000000000000000000000000000006",
+                                      "name": "Wrapped Ether",
+                                      "symbol": "WETH",
+                                      "decimals": 18,
+                                      "logo": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png"
+                                    },
+                                    {
+                                      "chainId": 8453,
+                                      "address": "0xB6fe221Fe9EeF5aBa221c348bA20A1Bf5e73624c",
+                                      "name": "Rocket Pool ETH",
+                                      "symbol": "rETH",
+                                      "decimals": 18,
+                                      "logo": "https://static.debank.com/image/arb_token/logo_url/0xec70dcb4a1efa46b8f2d97c310c9c4790ba5ffa8/6c8aa3f550d300ce84e06f95c496af69.png"
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/v1/pools": {
+      "get": {
+        "tags": ["Pool"],
+        "summary": "Get all pools",
+        "description": "Get a paginated list of supported pools for a provider on a chain.",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "uniswap"
+            },
+            "description": "Provider name."
+          },
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "example": 8453
+            },
+            "description": "Chain ID."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "example": 10
+            },
+            "description": "Number of pools to return."
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "example": 0
+            },
+            "description": "Offset for pagination."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response with supported pools",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["status", "data"],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["success"],
+                      "description": "Response status."
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": ["pools", "pages", "limit", "offset"],
+                      "properties": {
+                        "pools": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "address",
+                              "chainId",
+                              "name",
+                              "provider",
+                              "apr",
+                              "tvl",
+                              "underlyingAssets"
+                            ],
+                            "properties": {
+                              "address": {
+                                "type": "string",
+                                "description": "Pool address."
+                              },
+                              "chainId": {
+                                "type": "number",
+                                "description": "Chain ID."
+                              },
+                              "name": {
+                                "type": "string",
+                                "description": "Pool name."
+                              },
+                              "apr": {
+                                "type": "number",
+                                "description": "Pool APR."
+                              },
+                              "tvl": {
+                                "type": "string",
+                                "description": "Pool TVL in USD."
+                              },
+                              "provider": {
+                                "type": "string",
+                                "description": "Provider name."
+                              },
+                              "underlyingAssets": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "address",
+                                    "chainId",
+                                    "decimals",
+                                    "logo",
+                                    "symbol"
+                                  ],
+                                  "properties": {
+                                    "address": {
+                                      "type": "string",
+                                      "description": "Asset address."
+                                    },
+                                    "chainId": {
+                                      "type": "number",
+                                      "description": "Chain ID."
+                                    },
+                                    "decimals": {
+                                      "type": "number",
+                                      "description": "Asset decimals."
+                                    },
+                                    "logo": {
+                                      "type": "string",
+                                      "description": "Asset logo URL."
+                                    },
+                                    "symbol": {
+                                      "type": "string",
+                                      "description": "Asset symbol."
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "pages": {
+                          "type": "number",
+                          "description": "Total number of pages."
+                        },
+                        "limit": {
+                          "type": "number",
+                          "description": "Number of pools per page."
+                        },
+                        "offset": {
+                          "type": "number",
+                          "description": "Current offset."
+                        }
+                      }
+                    }
+                  },
+                  "example": {
+                    "status": "success",
+                    "data": {
+                      "pools": [
+                        {
+                          "address": "0xc19040A41Ff34bf183625919538f2Da239d504d3",
+                          "chainId": 8453,
+                          "name": "WETH/SLUG",
+                          "provider": "uniswap",
+                          "apr": 40,
+                          "tvl": "1000000000",
+                          "underlyingAssets": [
+                            {
+                              "address": "0x4200000000000000000000000000000000000006",
+                              "chainId": 8453,
+                              "decimals": 18,
+                              "logo": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png",
+                              "symbol": "WETH"
+                            },
+                            {
+                              "address": "0x77Eaa0a052CE2e8D0cfD6b3208eaf7ddf289D1EC",
+                              "chainId": 8453,
+                              "decimals": 9,
+                              "logo": "",
+                              "symbol": "SLUG"
+                            }
+                          ]
+                        }
+                      ],
+                      "pages": 100,
+                      "limit": 10,
+                      "offset": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/v1/pool/details": {
+      "get": {
+        "tags": ["Pool"],
+        "summary": "Get Pool Details",
+        "description": "Retrieve detailed information about a specific pool by address.",
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "example": 8453
+            },
+            "description": "Chain ID of the pool."
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "uniswap"
+            },
+            "description": "Provider name."
+          },
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "0x4C36388bE6F416A29C8d8Eee81C771cE6bE14B18"
+            },
+            "description": "Pool address."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response with pool details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["status", "data"],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["success"],
+                      "description": "Response status"
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": ["address"],
+                      "properties": {
+                        "address": {
+                          "type": "string",
+                          "description": "Pool address"
+                        },
+                        "slot0": {
+                          "type": "object",
+                          "required": ["sqrtPriceX96", "tick", "tickSpacing"],
+                          "properties": {
+                            "sqrtPriceX96": {
+                              "type": "string",
+                              "description": "Square root price X96"
+                            },
+                            "tick": {
+                              "type": "number",
+                              "description": "Current tick"
+                            },
+                            "tickSpacing": {
+                              "type": "number",
+                              "description": "Tick spacing"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "example": {
+                    "status": "success",
+                    "data": {
+                      "address": "0x4C36388bE6F416A29C8d8Eee81C771cE6bE14B18",
+                      "slot0": {
+                        "sqrtPriceX96": "1234567890",
+                        "tick": -12345,
+                        "tickSpacing": 60
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/v1/user/positions": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Retrieve User Positions",
+        "description": "Get user positions for a specific provider and chain.",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "balancer"
+            },
+            "description": "Provider name."
+          },
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "example": 8453
+            },
+            "description": "Chain ID."
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "0x99BCEBf44433E901597D9fCb16E799a4847519f6"
+            },
+            "description": "User wallet address."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response with user positions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["status", "data"],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["success"],
+                      "description": "Response status."
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": ["positions", "count"],
+                      "properties": {
+                        "positions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "underlyingAssets",
+                              "address",
+                              "apr",
+                              "name",
+                              "chainId",
+                              "provider"
+                            ],
+                            "properties": {
+                              "underlyingAssets": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "address",
+                                    "logo",
+                                    "decimals",
+                                    "symbol",
+                                    "price",
+                                    "chainId",
+                                    "amount",
+                                    "amountUSD"
+                                  ],
+                                  "properties": {
+                                    "address": {
+                                      "type": "string",
+                                      "description": "Asset address."
+                                    },
+                                    "logo": {
+                                      "type": "string",
+                                      "description": "Asset logo URL."
+                                    },
+                                    "decimals": {
+                                      "type": "number",
+                                      "description": "Asset decimals."
+                                    },
+                                    "symbol": {
+                                      "type": "string",
+                                      "description": "Asset symbol."
+                                    },
+                                    "price": {
+                                      "type": "string",
+                                      "description": "Asset price."
+                                    },
+                                    "chainId": {
+                                      "type": "number",
+                                      "description": "Chain ID."
+                                    },
+                                    "amount": {
+                                      "type": "string",
+                                      "description": "Amount in decimals."
+                                    },
+                                    "amountUSD": {
+                                      "type": "string",
+                                      "description": "Amount in USD."
+                                    }
+                                  }
+                                }
+                              },
+                              "address": {
+                                "type": "string",
+                                "description": "Pool address."
+                              },
+                              "apr": {
+                                "type": "number",
+                                "description": "Annual Percentage Rate."
+                              },
+                              "name": {
+                                "type": "string",
+                                "description": "Pool name."
+                              },
+                              "nftId": {
+                                "type": "string",
+                                "description": "NFT ID (if available)."
+                              },
+                              "chainId": {
+                                "type": "number",
+                                "description": "Chain ID."
+                              },
+                              "provider": {
+                                "type": "string",
+                                "description": "Provider name."
+                              }
+                            }
+                          }
+                        },
+                        "count": {
+                          "type": "number",
+                          "description": "Total number of positions."
+                        }
+                      }
+                    }
+                  },
+                  "example": {
+                    "status": "success",
+                    "data": {
+                      "positions": [
+                        {
+                          "underlyingAssets": [
+                            {
+                              "address": "0x4200000000000000000000000000000000000006",
+                              "logo": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png",
+                              "decimals": 18,
+                              "symbol": "WETH",
+                              "price": "3344.27",
+                              "chainId": 8453,
+                              "amount": "56004916608096",
+                              "amountUSD": "0.19"
+                            },
+                            {
+                              "address": "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA",
+                              "logo": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png",
+                              "decimals": 6,
+                              "symbol": "USDbC",
+                              "price": "0.999932",
+                              "chainId": 8453,
+                              "amount": "171523",
+                              "amountUSD": "0.17"
+                            }
+                          ],
+                          "address": "0x002A1eb0804504DD5162757Bc309FD34784aE7e0",
+                          "apr": 44,
+                          "name": "WETH/USDbC",
+                          "chainId": 8453,
+                          "provider": "balancer",
+                          "amount": "4500000",
+                          "amountUSD": "0.36"
+                        }
+                      ],
+                      "count": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/v1/user/transactions": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Transaction History",
+        "description": "Retrieve transaction history for a specific user account with optional filtering and pagination.",
+        "parameters": [
+          {
+            "name": "account",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "0x99BCEBf44433E901597D9fCb16E799a4847519f6"
+            },
+            "description": "Ethereum address of the user account."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 10
+            },
+            "description": "Number of transactions to return per page."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Page number for pagination."
+          },
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Filter transactions by specific blockchain network ID."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["PENDING", "COMPLETED", "FAILED", "REFUNDED"]
+            },
+            "description": "Filter transactions by status."
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"]
+            },
+            "description": "Sort direction for transaction listing."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response with paginated transaction history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "transactions",
+                    "totalCount",
+                    "limit",
+                    "page",
+                    "totalPages"
+                  ],
+                  "properties": {
+                    "transactions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["status", "steps"],
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "PENDING",
+                              "COMPLETED",
+                              "FAILED",
+                              "REFUNDED"
+                            ],
+                            "description": "Overall transaction status.",
+                            "example": "COMPLETED"
+                          },
+                          "steps": {
+                            "type": "array",
+                            "description": "List of transaction steps.",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "chainId",
+                                "hash",
+                                "status",
+                                "input",
+                                "output",
+                                "action",
+                                "protocol"
+                              ],
+                              "properties": {
+                                "action": {
+                                  "type": "string",
+                                  "description": "Type of action performed in this step.",
+                                  "example": "swap"
+                                },
+                                "protocol": {
+                                  "type": "object",
+                                  "description": "Protocol used for this step.",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "description": "Unique identifier for the protocol.",
+                                      "example": "balancer"
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "description": "Name of the protocol.",
+                                      "example": "Balancer"
+                                    },
+                                    "icon": {
+                                      "type": "string",
+                                      "description": "URL to the protocol icon.",
+                                      "example": "https://balancer.fi/favicon.ico"
+                                    }
+                                  }
+                                },
+                                "chainId": {
+                                  "type": "number",
+                                  "description": "Chain ID where the step was executed.",
+                                  "example": 8453
+                                },
+                                "hash": {
+                                  "type": "string",
+                                  "description": "Transaction hash for this step.",
+                                  "example": "0x7828ac68a277bdf4ce7bca2f54555cdc289960f00fecf143bd82f160588bbc45"
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": ["COMPLETED", "PENDING", "FAILED"],
+                                  "description": "Status of this particular step.",
+                                  "example": "COMPLETED"
+                                },
+                                "input": {
+                                  "type": "array",
+                                  "description": "Input assets used in the transaction.",
+                                  "items": {
+                                    "type": "object",
+                                    "required": [
+                                      "amount",
+                                      "amountUSD",
+                                      "asset"
+                                    ],
+                                    "properties": {
+                                      "amount": {
+                                        "type": "string",
+                                        "description": "Amount of the asset in its native decimal representation.",
+                                        "example": "204"
+                                      },
+                                      "amountUSD": {
+                                        "type": "string",
+                                        "description": "USD value of the amount.",
+                                        "example": "0.17167"
+                                      },
+                                      "asset": {
+                                        "type": "object",
+                                        "required": [
+                                          "chainId",
+                                          "address",
+                                          "symbol",
+                                          "logo",
+                                          "decimals",
+                                          "price",
+                                          "type"
+                                        ],
+                                        "properties": {
+                                          "chainId": {
+                                            "type": "number",
+                                            "description": "Chain ID where the asset exists.",
+                                            "example": 8453
+                                          },
+                                          "address": {
+                                            "type": "string",
+                                            "description": "Contract address of the asset.",
+                                            "example": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+                                          },
+                                          "symbol": {
+                                            "type": "string",
+                                            "description": "Token symbol.",
+                                            "example": "cbBTC"
+                                          },
+                                          "logo": {
+                                            "type": "string",
+                                            "description": "URL to the asset logo.",
+                                            "example": "https://static.debank.com/image/base_token/logo_url/0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf/a4ae837a6ca2fc45f07a74898cc4ba45.png"
+                                          },
+                                          "decimals": {
+                                            "type": "number",
+                                            "description": "Number of decimals for the asset.",
+                                            "example": 8
+                                          },
+                                          "price": {
+                                            "type": "string",
+                                            "description": "Current price of the asset in USD.",
+                                            "example": "84152"
+                                          },
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [
+                                              "NATIVE",
+                                              "ERC20",
+                                              "ERC721",
+                                              "ERC1155"
+                                            ],
+                                            "description": "Type of the asset.",
+                                            "example": "ERC20"
+                                          },
+                                          "provider": {
+                                            "type": "object",
+                                            "required": ["id", "name", "logo"],
+                                            "properties": {
+                                              "id": {
+                                                "type": "string",
+                                                "description": "Unique identifier for the provider.",
+                                                "example": "openeden"
+                                              },
+                                              "name": {
+                                                "type": "string",
+                                                "description": "Name of the provider.",
+                                                "example": "Open Eden"
+                                              },
+                                              "logo": {
+                                                "type": "string",
+                                                "description": "URL to the provider logo.",
+                                                "example": "https://app.openeden.com/tbill/favicons/favicon.svg"
+                                              }
+                                            }
+                                          },
+                                          "underlyingAssets": {
+                                            "type": "array",
+                                            "description": "List of underlying assets.",
+                                            "items": {
+                                              "type": "object",
+                                              "required": [
+                                                "chainId",
+                                                "address",
+                                                "symbol",
+                                                "name",
+                                                "logo",
+                                                "decimals"
+                                              ],
+                                              "properties": {
+                                                "chainId": {
+                                                  "type": "number",
+                                                  "description": "Chain ID of the underlying token.",
+                                                  "example": 8453
+                                                },
+                                                "address": {
+                                                  "type": "string",
+                                                  "description": "Contract address of the underlying token.",
+                                                  "example": "0x4200000000000000000000000000000000000006"
+                                                },
+                                                "name": {
+                                                  "type": "string",
+                                                  "description": "Name of the underlying token.",
+                                                  "example": "Wrapped Ether"
+                                                },
+                                                "symbol": {
+                                                  "type": "string",
+                                                  "description": "Symbol of the underlying token.",
+                                                  "example": "WETH"
+                                                },
+                                                "decimals": {
+                                                  "type": "number",
+                                                  "description": "Number of decimals for the underlying token.",
+                                                  "example": 18
+                                                },
+                                                "logo": {
+                                                  "type": "string",
+                                                  "description": "URL to the underlying token logo.",
+                                                  "example": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "output": {
+                                  "type": "array",
+                                  "description": "Output assets received from the transaction.",
+                                  "items": {
+                                    "type": "object",
+                                    "required": [
+                                      "amount",
+                                      "amountUSD",
+                                      "asset"
+                                    ],
+                                    "properties": {
+                                      "amount": {
+                                        "type": "string",
+                                        "description": "Amount of the asset in its native decimal representation.",
+                                        "example": "204"
+                                      },
+                                      "amountUSD": {
+                                        "type": "string",
+                                        "description": "USD value of the amount.",
+                                        "example": "0.17167"
+                                      },
+                                      "asset": {
+                                        "type": "object",
+                                        "required": [
+                                          "chainId",
+                                          "address",
+                                          "symbol",
+                                          "logo",
+                                          "decimals",
+                                          "price",
+                                          "type"
+                                        ],
+                                        "properties": {
+                                          "chainId": {
+                                            "type": "number",
+                                            "description": "Chain ID where the asset exists.",
+                                            "example": 8453
+                                          },
+                                          "address": {
+                                            "type": "string",
+                                            "description": "Contract address of the asset.",
+                                            "example": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+                                          },
+                                          "symbol": {
+                                            "type": "string",
+                                            "description": "Token symbol.",
+                                            "example": "cbBTC"
+                                          },
+                                          "logo": {
+                                            "type": "string",
+                                            "description": "URL to the asset logo.",
+                                            "example": "https://static.debank.com/image/base_token/logo_url/0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf/a4ae837a6ca2fc45f07a74898cc4ba45.png"
+                                          },
+                                          "decimals": {
+                                            "type": "number",
+                                            "description": "Number of decimals for the asset.",
+                                            "example": 8
+                                          },
+                                          "price": {
+                                            "type": "string",
+                                            "description": "Current price of the asset in USD.",
+                                            "example": "84152"
+                                          },
+                                          "type": {
+                                            "type": "string",
+                                            "enum": [
+                                              "NATIVE",
+                                              "ERC20",
+                                              "ERC721",
+                                              "ERC1155"
+                                            ],
+                                            "description": "Type of the asset.",
+                                            "example": "ERC20"
+                                          },
+                                          "provider": {
+                                            "type": "object",
+                                            "required": ["id", "name", "logo"],
+                                            "properties": {
+                                              "id": {
+                                                "type": "string",
+                                                "description": "Unique identifier for the provider.",
+                                                "example": "openeden"
+                                              },
+                                              "name": {
+                                                "type": "string",
+                                                "description": "Name of the provider.",
+                                                "example": "Open Eden"
+                                              },
+                                              "logo": {
+                                                "type": "string",
+                                                "description": "URL to the provider logo.",
+                                                "example": "https://app.openeden.com/tbill/favicons/favicon.svg"
+                                              }
+                                            }
+                                          },
+                                          "underlyingAssets": {
+                                            "type": "array",
+                                            "description": "List of underlying assets.",
+                                            "items": {
+                                              "type": "object",
+                                              "required": [
+                                                "chainId",
+                                                "address",
+                                                "symbol",
+                                                "name",
+                                                "logo",
+                                                "decimals"
+                                              ],
+                                              "properties": {
+                                                "chainId": {
+                                                  "type": "number",
+                                                  "description": "Chain ID of the underlying token.",
+                                                  "example": 8453
+                                                },
+                                                "address": {
+                                                  "type": "string",
+                                                  "description": "Contract address of the underlying token.",
+                                                  "example": "0x4200000000000000000000000000000000000006"
+                                                },
+                                                "name": {
+                                                  "type": "string",
+                                                  "description": "Name of the underlying token.",
+                                                  "example": "Wrapped Ether"
+                                                },
+                                                "symbol": {
+                                                  "type": "string",
+                                                  "description": "Symbol of the underlying token.",
+                                                  "example": "WETH"
+                                                },
+                                                "decimals": {
+                                                  "type": "number",
+                                                  "description": "Number of decimals for the underlying token.",
+                                                  "example": 18
+                                                },
+                                                "logo": {
+                                                  "type": "string",
+                                                  "description": "URL to the underlying token logo.",
+                                                  "example": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "example": {
+                          "status": "COMPLETED",
+                          "steps": [
+                            {
+                              "chainId": 8453,
+                              "hash": "0x7828ac68a277bdf4ce7bca2f54555cdc289960f00fecf143bd82f160588bbc45",
+                              "status": "COMPLETED",
+                              "action": "swap",
+                              "input": [
+                                {
+                                  "amount": "204",
+                                  "amountUSD": "0.19227",
+                                  "asset": {
+                                    "chainId": 8453,
+                                    "type": "ERC20",
+                                    "symbol": "cbBTC",
+                                    "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+                                    "name": "Coinbase Wrapped BTC",
+                                    "decimals": 8
+                                  }
+                                }
+                              ],
+                              "output": [
+                                {
+                                  "amount": "70886351050880",
+                                  "amountUSD": "0",
+                                  "asset": {
+                                    "chainId": 8453,
+                                    "type": "ERC20",
+                                    "symbol": "rETH-WETH-BPT",
+                                    "address": "0xC771c1a5905420DAEc317b154EB13e4198BA97D0",
+                                    "name": "Balancer rETH-WETH Stable Pool",
+                                    "decimals": 18,
+                                    "provider": {
+                                      "name": "Balancer",
+                                      "id": "balancer",
+                                      "logo": "https://balancer.fi/favicon.ico"
+                                    },
+                                    "underlyingTokens": [
+                                      {
+                                        "chainId": 8453,
+                                        "address": "0x4200000000000000000000000000000000000006",
+                                        "name": "Wrapped Ether",
+                                        "symbol": "WETH",
+                                        "decimals": 18,
+                                        "logo": "https://static.debank.com/image/coin/logo_url/eth/d61441782d4a08a7479d54aea211679e.png"
+                                      },
+                                      {
+                                        "chainId": 8453,
+                                        "address": "0xB6fe221Fe9EeF5aBa221c348bA20A1Bf5e73624c",
+                                        "name": "Rocket Pool ETH",
+                                        "symbol": "rETH",
+                                        "decimals": 18,
+                                        "logo": "https://static.debank.com/image/arb_token/logo_url/0xec70dcb4a1efa46b8f2d97c310c9c4790ba5ffa8/6c8aa3f550d300ce84e06f95c496af69.png"
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      },
+                      "description": "List of transactions for the user account"
+                    },
+                    "totalCount": {
+                      "type": "integer",
+                      "description": "Total number of transactions matching the filter criteria",
+                      "example": 42
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "description": "Number of transactions per page",
+                      "example": 10
+                    },
+                    "page": {
+                      "type": "integer",
+                      "description": "Current page number",
+                      "example": 1
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "description": "Total number of pages available",
+                      "example": 5
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  }
+}

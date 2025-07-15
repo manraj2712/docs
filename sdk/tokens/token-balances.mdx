@@ -1,0 +1,81 @@
+---
+title: "Token Balances"
+description: "Retrieve user token balances using the DZap SDK"
+icon: "wallet"
+---
+
+> Get token balances for any address with account-specific balance information.
+
+The DZap SDK allows you to retrieve token balances when providing an account address, giving you access to user-specific balance data along with token information.
+
+## Get Tokens with Balances
+
+Get all supported tokens with user balance information:
+
+```typescript
+import { DZapClient } from "@dzap/sdk";
+
+const dZap = DZapClient.getInstance();
+
+// Get tokens with account balances
+const tokensWithBalances = await dZap.getAllTokens(
+  42161, // chainId
+  userAccount // account address
+);
+
+console.log("Tokens with balances:", tokensWithBalances);
+
+// Access specific token balance
+const usdcToken = tokensWithBalances["0xaf88d065e77c8cC2239327C5EDb3A432268e5831"];
+console.log("USDC Balance:", usdcToken.balance);
+console.log("USDC Balance in USD:", usdcToken.balanceInUsd);
+```
+
+## Get Specific Token Details with Balance
+
+Get detailed information for a specific token including balance:
+
+```typescript
+// Get detailed information for a specific token with balance
+const tokenDetails = await dZap.getTokenDetails(
+  "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC address
+  1, // Ethereum mainnet
+  userAccount, // account (required for balance)
+  true, // includeBalance
+  false // includePrice (optional)
+);
+
+console.log("Token Details with Balance:", tokenDetails);
+console.log("User Balance:", tokenDetails.balance);
+console.log("Balance in USD:", tokenDetails.balanceInUsd);
+```
+
+## Balance Information Structure
+
+When an account is provided, each token includes balance information:
+
+```typescript
+type TokenInfoWithBalance = {
+  contract: string; // Contract address
+  symbol: string; // Token symbol (e.g., "USDC")
+  decimals: number; // Number of decimals
+  name: string; // Full name (e.g., "USD Coin")
+  balance: string; // User's balance in token units
+  chainId: number; // Chain ID where token exists
+  balanceInUsd?: number | null; // USD value of user's balance
+  price?: string; // Current price in USD (if available)
+  isDisabledOnSwapBridge?: {
+    source: boolean; // Disabled as source token
+    destination: boolean; // Disabled as destination token
+  };
+  isDisabledOnZap?: {
+    source: boolean; // Disabled for zap operations
+    destination: boolean;
+  };
+};
+```
+
+## Next Steps
+
+- [Get Token Prices](/sdk/tokens/token-prices) - Access real-time token pricing
+- [Get Tokens](/sdk/tokens/get-tokens) - Basic token information retrieval

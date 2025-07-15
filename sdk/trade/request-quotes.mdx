@@ -1,0 +1,152 @@
+---
+title: "Request Trade Quotes"
+description: "Get the best swap and bridge quotes using the DZap SDK"
+icon: "chart-line"
+---
+
+The DZap SDK provides functionality to request trade quotes, as well as to execute them. This guide will walk you through the process of making a request using `getTradeQuotes`.
+
+## How to Request Trade Quotes
+
+To get started, here is a simple example of how to request quotes to bridge and swap 1 USDC on Arbitrum to ETH on Base.
+
+```typescript
+import { DZapClient } from "@dzap/sdk";
+
+const dZap = DZapClient.getInstance();
+
+const quotesRequest: TradeQuotesRequest = {
+  integratorId: "your-integrator-id", // Your unique integrator ID (use "dzap" for testing)
+  fromChain: 42161, // Arbitrum
+  data: [
+    {
+      amount: "1000000", // 1 USDC (6 decimals)
+      srcToken: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC on Arbitrum
+      srcDecimals: 6,
+      destToken: "0x4200000000000000000000000000000000000006", // WETH on Base
+      destDecimals: 18,
+      toChain: 8453, // Base Chain
+      slippage: 1, // 1% slippage
+    },
+  ],
+  account: userAccount, // User's wallet address (optional)
+};
+
+const result = await dZap.getTradeQuotes(quotesRequest);
+const quotes = result.quotes;
+```
+
+When you request quotes, you receive an object containing the essential information to determine which route to take for a swap or bridging transfer. At this stage, transaction data is not included and must be requested separately using `buildTradeTransaction`.
+
+## Trade Quotes Request Parameters
+
+The `getTradeQuotes` function expects a `TradeQuotesRequest` object, which specifies a desired trade and includes all the information needed to calculate the most efficient routes.
+
+### Request Parameters
+
+| Parameter        | Type                     | Required | Description                                              |
+| ---------------- | ------------------------ | -------- | -------------------------------------------------------- |
+| `integratorId`   | string                   | yes      | Your unique integrator identifier (e.g. "dzap")          |
+| `fromChain`      | number                   | yes      | The ID of the source chain (e.g., Ethereum mainnet is 1) |
+| `data`           | TradeQuotesRequestData[] | yes      | Array of trade request data objects                      |
+| `account`        | string                   | no       | User's wallet address for the trade (optional)           |
+| `filter`         | QuoteFilter              | no       | Filter type for quote results (default is "all")         |
+| `allowedSources` | string[]                 | no       | List of allowed providers for the trade (optional)       |
+
+### TradeQuotesRequestData Parameters
+
+| Parameter      | Type   | Required | Description                                                                                     |
+| -------------- | ------ | -------- | ----------------------------------------------------------------------------------------------- |
+| `amount`       | string | yes      | The amount to be transferred from the source chain, specified in the smallest unit of the token |
+| `srcToken`     | string | yes      | The contract address of the token on the source chain                                           |
+| `srcDecimals`  | number | yes      | The number of decimals for the source token                                                     |
+| `destToken`    | string | yes      | The contract address of the token on the destination chain                                      |
+| `destDecimals` | number | yes      | The number of decimals for the destination token                                                |
+| `toChain`      | number | yes      | The ID of the destination chain                                                                 |
+| `slippage`     | number | yes      | The slippage tolerance as a percentage (e.g., 1 for 1%)                                         |
+
+## Quote Filter Options
+
+You can filter quotes based on different criteria:
+
+- `all` - Returns all available quotes. This is the default option and provides the fastest response time.
+- `best` - Return only the best quote
+- `fastest` - Return the fastest execution time quote (for bridge operations)
+
+```typescript
+const quotesRequest: TradeQuotesRequest = {
+  integratorId: "your-integrator-id",
+  fromChain: 42161,
+  data: [
+    {
+      amount: "1000000",
+      srcToken: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      srcDecimals: 6,
+      destToken: "0x4200000000000000000000000000000000000006",
+      destDecimals: 18,
+      toChain: 8453,
+      slippage: 1,
+    },
+  ],
+  account: userAccount,
+  filter: "best", // Only return the best quote
+};
+```
+
+## Understanding the Response
+
+The response contains detailed information about available routes:
+
+```typescript
+type TradeQuotesResponse = {
+  [pair: string]: {
+    recommendedSource: string;
+    quoteRates: TradeQuotesByProviderId;
+    tokensWithoutPrice: Record<number, string[]>; // Tokens without price data by chain ID
+  };
+};
+```
+
+### Key Response Fields
+
+- **`pair`** - Unique identifier for the trade pair (e.g., `42161_0xaf88d065e77c8cC2239327C5EDb3A432268e5831_8453_0x42000000000000000000000000000000000000006`). Can be generated using `getTokensPairKey`.
+- **`recommendedSource`** - The provider ID of the recommended route
+- **`quoteRates`** - Object containing detailed quotes for each provider
+- **`tokensWithoutPrice`** - Tokens that don't have price data available
+
+## Working with Quote Results
+
+```typescript
+const result = await dZap.getTradeQuotes(quotesRequest);
+
+// Get the pair key (usually the first and only one for single trades)
+const pairKey = Object.keys(result)[0];
+const pairData = result[pairKey];
+
+// Get the recommended route
+const recommendedProvider = pairData.recommendedSource;
+const recommendedQuote = pairData.quoteRates?.[recommendedProvider];
+
+if (recommendedQuote) {
+  console.log("Best route details:");
+  console.log("Source amount:", recommendedQuote.srcAmount);
+  console.log("Destination amount:", recommendedQuote.destAmount);
+  console.log("Provider:", recommendedQuote.providerDetails.name);
+  console.log("Estimated duration:", recommendedQuote.duration);
+  console.log("Price impact:", recommendedQuote.priceImpactPercent);
+}
+```
+
+## Next Steps
+
+Once you have received quotes, you can proceed to:
+
+1. [Execute the transaction](/sdk/trade/execute-transaction) on the blockchain
+2. [Track the status](/sdk/trade/status-tracking) of your trade
+
+<Note>
+  Before executing trades, tokens typically require approval to allow the DZap
+  contracts to spend them on your behalf. Learn more about gas-optimized
+  approval mechanisms in the [Approval Mechanisms](/sdk/approval-mechanisms)
+  section.
+</Note>

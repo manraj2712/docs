@@ -1,0 +1,212 @@
+---
+title: "Request Zap Quotes"
+description: "Request quotes for complex DeFi operations using the DZap SDK"
+icon: "bolt"
+---
+
+The DZap SDK provides functionality to request zap quotes for complex DeFi operations. This guide will walk you through the process of making a request using `getZapQuote`.
+
+## How to Request Zap Quotes
+
+To get started, here is a simple example of how to request a quote for zapping 1 USDC into a yield-bearing position on Arbitrum.
+
+```typescript
+import { DZapClient } from "@dzap/sdk";
+
+const dZap = DZapClient.getInstance();
+
+const zapQuoteRequest: ZapQuoteRequest = {
+  srcChainId: 42161, // Arbitrum
+  destChainId: 42161, // Same chain for simplicity
+  account: userAccount,
+  srcToken: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC
+  destToken: "0x724dc807b04555b71ed48a6896b6F41593b8C637", // Aave USDC
+  amount: "1000000", // 1 USDC (6 decimals)
+  recipient: userAccount,
+  slippage: 1, // 1% slippage
+};
+
+const zapQuote = await dZap.getZapQuote(zapQuoteRequest);
+console.log("Zap quote:", zapQuote);
+```
+
+When you request zap quotes, you receive an object containing the essential information to determine the best path for complex DeFi operations. At this stage, transaction data is not included and must be requested separately using `buildZapTxn`.
+
+## Zap Quote Request Parameters
+
+The `getZapQuote` function expects a `ZapQuoteRequest` object, which specifies a desired zap operation and includes all the information needed to calculate the most efficient route.
+
+### Request Parameters
+
+| Parameter     | Type   | Required | Description                                                |
+| ------------- | ------ | -------- | ---------------------------------------------------------- |
+| `srcChainId`  | number | yes      | Source chain ID where the operation begins                 |
+| `destChainId` | number | yes      | Destination chain ID where the operation completes         |
+| `account`     | string | yes      | User's wallet address                                      |
+| `srcToken`    | string | yes      | Source token contract address                              |
+| `destToken`   | string | yes      | Destination token or protocol address                      |
+| `amount`      | string | no       | Amount to zap in smallest token unit (not needed for NFTs) |
+| `recipient`   | string | yes      | Address to receive the final tokens/positions              |
+| `slippage`    | number | yes      | Slippage tolerance as percentage                           |
+
+## Understanding the Response
+
+The response contains detailed information about the zap route:
+
+```typescript
+type ZapQuoteResponse = {
+  amountOut: string; // Expected final output amount
+  approvalData?: {
+    approveTo: string; // Address to approve for spending
+    callTo: string; // Token contract address to call for approval
+    amount: string; // Amount to approve in token units
+  };
+  path: ZapPath[]; // Array of steps in the zap operation
+};
+
+type ZapPath = {
+  action: string; // Type of action (swap, deposit, stake, etc.)
+  protocol: {
+    name: string; // Protocol name
+    id: string; // Protocol identifier
+    icon: string; // Protocol icon URL
+  };
+  input: Array<{
+    amount: string; // Input amount in token units
+    amountUSD: string; // USD value of input
+    asset: ZapPathAsset; // Asset details
+  }>;
+  output: Array<{
+    amount: string; // Output amount in token units
+    minReturn: string; // Minimum guaranteed return amount
+    amountUSD: string; // USD value of output
+    asset: ZapPathAsset; // Asset details
+  }>;
+  fee: ZapFee[]; // Fees for this step
+  estimatedDuration: number; // Time estimate in seconds
+  dust: any[]; // Dust amounts (if any)
+};
+```
+
+### Key Response Fields
+
+- **`amountOut`** - The expected final output amount from the zap
+- **`approvalData`** - Token approval information (if approval is required)
+- **`path`** - Array of steps that will be executed in the zap operation
+- **`path[].action`** - The type of operation (swap, deposit, withdraw, etc.)
+- **`path[].protocol`** - Information about the protocol used for this step
+- **`path[].input/output`** - Detailed asset information including amounts and USD values
+- **`path[].fee`** - Fee breakdown for each step
+- **`path[].estimatedDuration`** - Expected time for this step to complete
+
+## Working with Zap Quote Results
+
+```typescript
+const zapQuote = await dZap.getZapQuote(zapQuoteRequest);
+
+// Check if approval is needed
+if (zapQuote.approvalData) {
+  console.log("Approval required:");
+  console.log(
+    `Approve ${zapQuote.approvalData.amount} tokens to ${zapQuote.approvalData.approveTo}`
+  );
+}
+
+// Examine the path
+console.log("Zap will execute", zapQuote.path.length, "steps:");
+
+zapQuote.path.forEach((step, index) => {
+  console.log(`\nStep ${index + 1}: ${step.action}`);
+  console.log(`Protocol: ${step.protocol.name}`);
+
+  // Show input details
+  step.input.forEach((input, inputIndex) => {
+    console.log(
+      `Input ${inputIndex + 1}: ${input.amount} ${input.asset.symbol} ($${
+        input.amountUSD
+      })`
+    );
+  });
+
+  // Show output details
+  step.output.forEach((output, outputIndex) => {
+    console.log(
+      `Output ${outputIndex + 1}: ${output.amount} ${output.asset.symbol} ($${
+        output.amountUSD
+      })`
+    );
+    if (output.minReturn) {
+      console.log(`Minimum return: ${output.minReturn} ${output.asset.symbol}`);
+    }
+  });
+
+  console.log(`Estimated duration: ${step.estimatedDuration}s`);
+
+  // Show fees if any
+  if (step.fee.length > 0) {
+    const stepFees = step.fee.reduce(
+      (acc, fee) => acc + parseFloat(fee.amountUSD),
+      0
+    );
+    console.log(`Step fees: $${stepFees.toFixed(5)}`);
+  }
+});
+
+// Calculate total fees across all steps
+const totalFees = zapQuote.path.reduce((acc, step) => {
+  return (
+    acc +
+    step.fee.reduce(
+      (stepTotal, fee) => stepTotal + parseFloat(fee.amountUSD),
+      0
+    )
+  );
+}, 0);
+
+// Calculate total duration
+const totalDuration = zapQuote.path.reduce(
+  (acc, step) => acc + step.estimatedDuration,
+  0
+);
+
+console.log(`\nSummary:`);
+console.log(`Expected output: ${zapQuote.amountOut}`);
+console.log(`Total fees: $${totalFees.toFixed(5)}`);
+console.log(`Total duration: ${totalDuration}s`);
+```
+
+## Advanced Examples
+
+### Cross-Chain Liquidity Provision
+
+```typescript
+// Bridge USDC from Ethereum to Arbitrum and provide liquidity to Uniswap V3
+const crossChainLpQuote = await dZap.getZapQuote({
+  srcChainId: 8453, // Base
+  destChainId: 42161, // Arbitrum
+  account: userAddress,
+  srcToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC on Ethereum
+  destToken: "0xC6962004f452bE9203591991D15f6b388e09E8D0", // Uniswap V3 ETH/USDC LP
+  amount: "1000000000", // 1000 USDC
+  recipient: userAddress,
+  slippage: 2, // Higher slippage for cross-chain
+});
+
+console.log("Cross-chain LP quote received:");
+console.log(`Expected LP tokens: ${crossChainLpQuote.amountOut}`);
+console.log(`Steps required: ${crossChainLpQuote.path.length}`);
+```
+
+## Next Steps
+
+Once you have received a zap quote, you can proceed to:
+
+1. [Execute the zap transaction](/sdk/zap/execute-zap) on the blockchain
+2. [Track the status](/sdk/zap/status-tracking) of your zap
+
+<Note>
+  Before executing zaps, tokens typically require approval to allow the DZap
+  contracts to spend them on your behalf. Learn more about gas-optimized
+  approval mechanisms in the [Approval Mechanisms](/sdk/approval-mechanisms)
+  section.
+</Note>

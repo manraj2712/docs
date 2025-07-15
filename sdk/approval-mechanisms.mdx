@@ -1,0 +1,316 @@
+---
+title: "Approval Mechanisms"
+description: "Complete guide to token approval workflows and gas optimization"
+icon: "shield-check"
+---
+
+## Token Approval Mechanism
+
+Before executing any transaction that spends ERC20 tokens (swap, bridge, zap, etc.), the DZap contract must be approved to access those tokens. The SDK provides multiple approval modes to handle different scenarios optimally.
+
+## Recommended Approval Flow
+
+```typescript
+async function completeApprovalFlow(
+  tokens: { address: string; amount: bigint }[],
+  service: "trade" | "zap",
+  userAddress: HexString
+) {
+  // 1. Check current allowances
+  const allowanceCheck = await dZap.getAllowance({
+    chainId: 1,
+    sender: userAddress,
+    tokens,
+    service,
+    mode: ApprovalModes.AutoPermit,
+  });
+
+  console.log("Allowance check:", allowanceCheck.data);
+
+  const tokensForApproval = tokens.filter(
+    (t) => allowanceCheck.data[t.address].approvalNeeded
+  );
+  const tokensForSignatures = tokens.filter(
+    (t) => allowanceCheck.data[t.address].signatureNeeded
+  );
+
+  // 2. Handle approvals if needed
+  if (tokensForApproval.length > 0) {
+    console.log(`${tokensForApproval.length} approvals needed`);
+
+    await dZap.approve({
+      chainId: 1,
+      signer,
+      sender: userAddress,
+      tokens: tokensForApproval,
+      service,
+      mode: ApprovalModes.AutoPermit,
+    });
+  }
+
+  // 3. Handle permit signatures if possible
+  if (tokensForSignatures.length > 0) {
+    console.log(`${tokensForSignatures.length} signatures needed`);
+
+    const signatures = await dZap.sign({
+      chainId: 1,
+      sender: userAddress,
+      tokens: tokensForSignatures,
+      signer,
+      spender: contractAddress,
+      service,
+      permitType: PermitTypes.AutoPermit,
+      signatureCallback: async (res) => {
+        console.log("Permit signatures:", res.permitData);
+      },
+    });
+
+    return signatures;
+  }
+}
+```
+
+## Approval Modes Deep Dive
+
+### 1. Default Mode (Standard ERC20)
+
+Traditional approval directly to the DZap contract.
+
+<Tabs>
+  <Tab title="Implementation">
+    ```typescript
+    // Check allowance
+    const allowanceCheck = await dZap.getAllowance({
+      chainId: 1,
+      sender: userAddress,
+      tokens: [{ address: tokenAddress, amount: BigInt('1000000') }],
+      service: Services.trade,
+      mode: ApprovalModes.Default
+    });
+
+    const tokensForApproval = allowanceCheck.data.filter(
+      (t) => t.approvalNeeded
+    );
+
+    // Approve if needed
+    if (tokensForApproval.length > 0) {
+      await dZap.approve({
+        chainId: 1,
+        signer,
+        sender: userAddress,
+        tokens: tokensForApproval,
+        service: Services.trade,
+        mode: ApprovalModes.Default
+      });
+    }
+    ```
+
+  </Tab>
+  
+  <Tab title="Characteristics">
+    - **Gas Cost**: High (separate approval transaction)
+    - **Setup**: None required
+    - **Token Support**: All ERC20 tokens
+    - **User Experience**: Requires 2 transactions
+    - **Security**: Standard ERC20 approval model
+  </Tab>
+  
+  <Tab title="Best For">
+    - One-time transactions
+    - Tokens without permit support
+    - Legacy systems
+    - Maximum compatibility
+  </Tab>
+</Tabs>
+
+### 2. Permit2 Mode
+
+Uses Uniswap's Permit2 for gas-efficient repeated approvals.
+
+<Tabs>
+  <Tab title="Implementation">
+    ```typescript
+    
+    const allowanceCheck = await dZap.getAllowance({
+      chainId: 1,
+      sender: userAddress,
+      tokens: [{ address: tokenAddress, amount: BigInt('1000000') }],
+      service: 'swap',
+      mode: ApprovalModes.Permit2
+    });
+
+    const tokensForApproval = allowanceCheck.data.filter(
+      (t) => t.approvalNeeded
+    );
+
+    // Approve if needed
+    if (tokensForApproval.length > 0) {
+      await dZap.approve({
+        chainId: 1,
+        signer,
+        sender: userAddress,
+        tokens: tokensForApproval,
+        service: Services.trade,
+        mode: ApprovalModes.Permit2
+      });
+    }
+
+    // Sign permit if needed
+    const tokensForSignatures = allowanceCheck.data.filter(
+      (t) => t.signatureNeeded
+    );
+
+    if (tokensForSignatures.length > 0) {
+      const signatures = await dZap.sign({
+        chainId: 1,
+        sender: userAddress,
+        tokens: tokensForSignatures,
+        signer,
+        spender: contractAddress,
+        service: Services.trade,
+        permitType: PermitTypes.Permit2,
+        signatureCallback: async (res) => {
+          console.log("Permit signatures:", res.permitData);
+        },
+      });
+      return signatures;
+    }
+    ```
+
+  </Tab>
+  
+  <Tab title="Characteristics">
+    - **Gas Cost**: Low for repeated use
+    - **Setup**: One-time approval per token
+    - **Token Support**: ERC20 tokens with Permit2 support (almost all erc20 tokens)
+    - **User Experience**: Single transaction for repeated use
+    - **Security**: Time-bound permits, reduced attack surface
+  </Tab>
+  
+  <Tab title="Benefits">
+    - **Initial Cost**: One-time approval per token
+    - **Ongoing Cost**: Gas-less signatures
+    - **Flexibility**: Granular amount control
+    - **Security**: Time-bound permits
+    - **UX**: No repeated approvals
+  </Tab>
+</Tabs>
+
+### 3. EIP-2612 Permit Mode
+
+Direct permit signatures to DZap contract for supported tokens.
+
+<Tabs>
+  <Tab title="Implementation">
+    ```typescript
+    // Check if token supports EIP-2612
+    const {supportsPermit} = await checkEIP2612PermitSupport({address: tokenAddress, chainId: 1});
+    
+    if (supportsPermit) {
+      const signatures = await dZap.sign({
+        chainId: 1,
+        sender: userAddress,
+        tokens: [{ address: tokenAddress, amount: '1000000' }],
+        signer,
+        spender: contractAddress,
+        permitType: PermitTypes.EIP2612Permit,
+        service: Services.trade,
+        signatureCallback: async (res) => {
+          console.log("Permit signatures:", res.permitData);
+        },
+      });
+      return signatures;
+    } else {
+      console.log("Token does not support EIP-2612 permit");
+      // Fallback to other approval methods
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Characteristics">
+    - **Gas Cost**: Gas-less signatures
+    - **Setup**: None required
+    - **Token Support**: ERC20 tokens with EIP-2612 support
+    - **User Experience**: Single signature for gas-less approval
+    - **Security**: Time-bound permits, reduced attack surface
+  </Tab>
+  
+  <Tab title="Benefits">
+    - **Zero Gas**: No approval transaction needed
+    - **Direct**: No intermediate contracts
+    - **Immediate**: Works instantly
+    - **Secure**: Built into token contract
+  </Tab>
+</Tabs>
+
+### 4. Auto Permit Mode (Recommended)
+
+Automatically selects the optimal approval method.
+
+<Tabs>
+  <Tab title="Decision Logic">
+    ```typescript
+    async function autoPermitDecision(tokenAddress: string, chainId: number) {
+      // 1. Check EIP-2612 support first (most gas efficient)
+      const eip2612Support = await checkEIP2612Support(tokenAddress, chainId);
+      if (eip2612Support) {
+        return { mode: 'EIP2612Permit', gasless: true, setup: false };
+      }
+      
+      // 2. Check Permit2 approval status
+      const permit2Status = await checkPermit2Approval(tokenAddress, userAddress);
+      if (permit2Status.approved) {
+        return { mode: 'Permit2', gasless: true, setup: false };
+      }
+      
+      // 3. Evaluate Permit2 viability
+      if (permit2Status.available) {
+        return { mode: 'Permit2', gasless: true, setup: true };
+      }
+      
+      // 4. Fall back to standard approval
+      return { mode: 'Default', gasless: false, setup: false };
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Usage">
+    ```typescript
+    // Simply use AutoPermit - SDK handles everything
+    const allowanceCheck = await dZap.getAllowance({
+      chainId: 1,
+      sender: userAddress,
+      tokens: tokens,
+      service: 'swap',
+      mode: ApprovalModes.AutoPermit // Recommended
+    });
+
+    // SDK automatically chooses the best approach
+    if (allowanceCheck.data.noOfApprovalsRequired > 0) {
+      await dZap.approve({...});
+    }
+
+    if (allowanceCheck.data.noOfSignaturesRequired > 0) {
+      await dZap.sign({...});
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+## Security Considerations
+
+<CardGroup cols={2}>
+  <Card title="Limit Exposure" icon="shield">
+    Use exact amounts for high-value or infrequent transactions
+  </Card>
+  <Card title="Monitor Allowances" icon="eye">
+    Regularly audit and revoke unnecessary approvals
+  </Card>
+  <Card title="Use Permits When Possible" icon="signature">
+    Permits reduce approval attack surface
+  </Card>
+  <Card title="Set Expiration Times" icon="clock">
+    Use reasonable deadlines for permit signatures
+  </Card>
+</CardGroup>

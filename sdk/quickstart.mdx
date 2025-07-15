@@ -1,0 +1,234 @@
+---
+title: "Quick Start"
+description: "Get started with the DZap SDK in minutes"
+icon: "rocket"
+---
+
+## Set up the SDK
+
+<Steps>
+  <Step title="Initialize the Client">
+    First, create the DZap client instance:
+
+    ```typescript
+    import { DZapClient } from '@dzapio/dzap-sdk';
+
+    // Basic initialization
+    const dZap = DZapClient.getInstance();
+
+    // With custom RPC URLs (optional)
+    const customRpcUrls = {
+      1: ['https://eth.llamarpc.com'], // Ethereum mainnet
+      42161: ['https://arbitrum.llamarpc.com'], // Arbitrum
+      // Add more chains as needed
+    };
+
+    // Initialize with custom RPC URLs
+    const dZapWithCustomRpc = DZapClient.getInstance(customRpcUrls);
+    ```
+
+    <Tip>
+      The DZap client uses a singleton pattern. Custom RPC URLs are useful if you want to use specific RPC endpoints instead of the defaults.
+    </Tip>
+
+  </Step>
+
+  <Step title="Get Your First Quote">
+    Request a quote for a token swap:
+
+    ```typescript
+    const quote = await dZap.getTradeQuotes({
+      integratorId: 'dzap',
+      fromChain: 42161, // Arbitrum
+      data: [
+        {
+          amount: '1000000', // 1 USDC (6 decimals)
+          srcToken: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', // USDC on Arbitrum
+          srcDecimals: 6,
+          destToken: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', // WETH on Arbitrum
+          destDecimals: 18,
+          toChain: 42161, // Same chain
+          slippage: 1, // 1% slippage
+        }
+      ],
+      account: '0x...', // Your wallet address
+    });
+
+    console.log('Quotes from supported protocols:', quote);
+    ```
+
+  </Step>
+
+  <Step title="Execute the Transaction">
+    <Tip>
+      Before executing trades, tokens typically require approval to allow the DZap contracts to spend them on your behalf. Learn more about gas-optimized approval mechanisms and permit signatures in the [Approval Mechanisms](/sdk/approval-mechanisms) section.
+    </Tip>
+
+    Build and send the transaction:
+
+    ```typescript
+    // Get the best route
+    const pairKey = Object.keys(quote)[0];
+    const recommendedSource = quote[pairKey].recommendedSource!;
+    const bestQuote = quote[pairKey].quoteRates[recommendedSource];
+
+    // Send using your preferred signer
+    const result = await dZap.trade({
+      chainId: 42161,
+      request: {
+        integratorId: 'dzap',
+        fromChain: 42161,         // Arbitrum
+        sender: '0x...', // Your wallet address
+        refundee: '0x...', // Address to which to refund if needed
+        data: [
+          {
+            amount: bestQuote.srcAmount,
+            srcToken: bestQuote.srcToken.address,
+            srcDecimals: bestQuote.srcToken.decimals,
+            destToken: bestQuote.destToken.address,
+            destDecimals: bestQuote.destToken.decimals,
+            toChain: 8453,        // Base Chain
+            selectedRoute: recommendedSource, // The recommended source from quote
+            recipient: '0x...', // Address to receive the destination token
+            slippage: 1, // 1% slippage
+          }
+        ],
+      },
+      signer: yourSigner, // ethers.Signer or viem.WalletClient or wagmi.WalletClient
+    });
+    ```
+
+  </Step>
+</Steps>
+
+## Complete Example
+
+Here's a complete example of a token swap:
+
+```typescript
+import { DZapClient, Services, ApprovalModes } from "@dzapio/dzap-sdk";
+import { ethers } from "ethers";
+
+async function swapTokens() {
+  // Initialize SDK
+  const dZap = DZapClient.getInstance();
+
+  // Setup wallet (example with ethers)
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
+  const signer = provider.getSigner();
+  const userAddress = await signer.getAddress();
+
+  try {
+    // 1. Get quote
+    const quote = await dZap.getTradeQuotes({
+      integratorId: "DZap",
+      fromChain: 42161, // Arbitrum
+      data: [
+        {
+          amount: "1000000", // 1 USDC
+          srcToken: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC
+          srcDecimals: 6,
+          destToken: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1", // WETH
+          destDecimals: 18,
+          toChain: 42161,
+          slippage: 1,
+        },
+      ],
+      account: userAddress,
+    });
+
+    // Get the best route
+    const pairKey = Object.keys(quote)[0];
+    const recommendedSource = quote[pairKey].recommendedSource!;
+    const bestQuote = quote[pairKey].quoteRates[recommendedSource];
+
+    console.log("Quote received:", bestQuote);
+
+    // 2. Check if approval is needed
+    const allowanceCheck = await dZap.getAllowance({
+      chainId: 42161,
+      sender: userAddress,
+      tokens: [
+        {
+          address: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          amount: BigInt("1000000"),
+        },
+      ],
+      rpcUrls: ["https://arbitrum.llamarpc.com"],
+      service: Services.swap,
+      mode: ApprovalModes.Default, // Use AutoPermit or other modes as needed
+    });
+
+    // 3. Approve if needed
+    if (allowanceCheck.data.noOfApprovalsRequired > 0) {
+      await dZap.approve({
+        chainId: 42161,
+        signer,
+        sender: userAddress,
+        tokens: [
+          {
+            address: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+            amount: BigInt("1000000"),
+          },
+        ],
+        service: Services.swap,
+        permitType: ApprovalModes.Default, // Use AutoPermit or other modes as needed
+      });
+    }
+
+    // 5. Execute transaction
+    const result = await dZap.trade({
+      chainId: 42161,
+      request: {
+        integratorId: "DZap",
+        fromChain: 42161, // Arbitrum
+        sender: "0x...", // Your wallet address
+        refundee: "0x...", // Address to which to refund if needed
+        data: [
+          {
+            amount: bestQuote.srcAmount,
+            srcToken: bestQuote.srcToken.address,
+            srcDecimals: bestQuote.srcToken.decimals,
+            destToken: bestQuote.destToken.address,
+            destDecimals: bestQuote.destToken.decimals,
+            toChain: 8453, // Base Chain
+            selectedRoute: recommendedSource, // The recommended source from quote
+            recipient: "0x...", // Address to receive the destination token
+            slippage: 1, // 1% slippage
+          },
+        ],
+      },
+      signer: yourSigner, // ethers.Signer or viem.WalletClient or wagmi.WalletClient
+    });
+
+    if (txResult.status === "success" && txResult.txnHash) {
+      console.log("Transaction successful:", txResult.txnHash);
+    } else {
+      console.error("Transaction failed:", txResult.error);
+    }
+  } catch (error) {
+    console.error("Transaction failed:", error);
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/sdk/configuration">
+    Learn about SDK configuration options
+  </Card>
+  <Card title="Trade" icon="arrow-right-arrow-left" href="/sdk/trade">
+    Deep dive into Trade
+  </Card>
+  <Card title="Zap" icon="coins" href="/sdk/zap">
+    One click multi-step DeFi transactions
+  </Card>
+  <Card
+    title="Approval Mechanisms"
+    icon="shield-check"
+    href="/sdk/approval-mechanisms"
+  >
+    Understand gas-optimized approvals
+  </Card>
+</CardGroup>
